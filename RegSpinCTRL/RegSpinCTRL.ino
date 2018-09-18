@@ -3,39 +3,24 @@
 #include "RegSplitFlap.h"
 
 // Constants
-//const int SREG_SR_PIN = 11;
-//const int SREG_CLK_PIN = 13;
-//const int SREG_QA_TICK_PIN = 12;
-const int ERROR_LED_PIN = 13;
-
-//const int MOSI_PIN = SREG_SR_PIN;
-//const int MISO_PIN = SREG_QA_TICK_PIN;
-//const int SCLK_PIN = SREG_CLK_PIN;
-
-// Globals
-RegSplitFlap disp = RegSplitFlap();
-
 
 // Functions
-
 
 // Setup
 void setup() 
 {
   Serial.begin(230400);
+  Serial.println("Booting");
 
-  //pinMode(ERROR_LED_PIN, OUTPUT);
-
-  //digitalWrite(ERROR_LED_PIN, HIGH);
-
-  disp.begin();
-
+  EBaptist_RegSplitFlap::init();
 }
 
 // loop globals
-
+int flap = 0;
 void loop() 
 {
-
-  disp.doStep();
+  delay(6000);
+  EBaptist_RegSplitFlap::setTarget(0, flap);
+  flap++;
+  flap = flap % 16;
 }
