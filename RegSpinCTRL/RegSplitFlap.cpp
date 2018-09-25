@@ -4,25 +4,34 @@
 // Includes
 #include "RegSplitFlap.h"
 
-namespace EBaptist_RegSplitFlap
+namespace EWNB_RegSplitFlap
 {
 
   // Constants
   const float FLAP_STEPS_PER_FLAP = STEPPER_STEPS_PER_REV / float(FLAP_NUM_FLAPS);
-  const int FLAP_HOME_STEP_OFFSET[SREG_NUM_REGS] = {970 * (1+STEPPER_MICROSTEP)};
+  
+  typedef enum
+  {
+    WAITING_FOR_NOT_HOME,
+    SEEN_NOT_HOME,
+    HOME_FOUND
+  } homing_state_t;
+
 
   // Statics
-  byte m_stepperPatterns[8];
-  int m_stepperStepIndex[SREG_NUM_REGS];
-  byte m_stepperCoilState[SREG_NUM_REGS];
-  byte m_stepperReadData[SREG_NUM_REGS];
-  bool m_rotateStepper[SREG_NUM_REGS];
-  homing_state_t m_stepperHomeState[SREG_NUM_REGS]; 
-  unsigned long m_timeNextStep;
-  int m_accelCount[SREG_NUM_REGS];
-  int m_accelLimit[SREG_NUM_REGS];
-  int m_stepperCurrentPosition[SREG_NUM_REGS];
-  int m_stepperTargetFlap[SREG_NUM_REGS];
+  byte m_stepperPatterns[8] = {0};
+  int m_stepperStepIndex[SREG_NUM_REGS] = {0};
+  byte m_stepperCoilState[SREG_NUM_REGS] = {0};
+  byte m_stepperReadData[SREG_NUM_REGS] = {0};
+  bool m_rotateStepper[SREG_NUM_REGS] = {0};
+  homing_state_t m_stepperHomeState[SREG_NUM_REGS] = {0};
+  bool m_stepperHomeActiveLastTime[SREG_NUM_REGS] = {0};
+//  unsigned long m_timeNextStep = {0};
+  int m_accelCount[SREG_NUM_REGS] = {0};
+  int m_accelLimit[SREG_NUM_REGS] = {0};
+  int m_stepperCurrentPosition[SREG_NUM_REGS] = {0};
+  int m_stepperTargetStep[SREG_NUM_REGS] = {0};
+
 
   // Function Prototypes
   //void setRotation(int stepper, bool rotate);
@@ -105,13 +114,18 @@ namespace EBaptist_RegSplitFlap
   //  if (m_timeNextStep == 0) 
   //    m_timeNextStep = micros();
   //  m_timeNextStep += STEPPER_STEP_PERIOD_US;
+
+      // https://www.instructables.com/id/Fast-digitalRead-digitalWrite-for-Arduino/
+    PORTB = 0b000111; // load mode
+    SPI.transfer(0); // clock to enact parallel load
+    PORTB = 0b000101; // shift right mode
   
     // Check if should rotate
     for (int i = 0; i < SREG_NUM_REGS; i++) {
       // Check if should rotate
+      bool homeActive = ((bool)(m_stepperReadData[i] & SREG_HOME_BITMASK)) == HOME_ACTIVE_LEVEL;
       if (m_stepperHomeState[i] != HOME_FOUND) {
         m_rotateStepper[i] = true;
-        bool homeActive = ((bool)(m_stepperReadData[i] & SREG_HOME_BITMASK)) == HOME_ACTIVE_LEVEL;
         //Serial.println(homeActive);
         if (m_stepperHomeState[i] == WAITING_FOR_NOT_HOME && !homeActive) {
           m_stepperHomeState[i] = SEEN_NOT_HOME;
@@ -120,15 +134,29 @@ namespace EBaptist_RegSplitFlap
           m_stepperCurrentPosition[i] = FLAP_HOME_STEP_OFFSET[i];
         }
       }
+      
       if (m_stepperHomeState[i] == HOME_FOUND) {
-        if ((m_stepperCurrentPosition[i]/FLAP_STEPS_PER_FLAP) != m_stepperTargetFlap[i]) {
+        if (homeActive && !m_stepperHomeActiveLastTime[i]) {
+          if (m_stepperCurrentPosition[i] >= STEPPER_STEPS_PER_REV-FLAP_HOME_TOLERANCE_STEPS
+            && m_stepperCurrentPosition[i] <= STEPPER_STEPS_PER_REV+FLAP_HOME_TOLERANCE_STEPS) {
+              m_stepperCurrentPosition[i] = 0;
+              Serial.println("home succeded!");
+            } else {
+              Serial.println("home ignored!");
+            }
+        }
+        if (m_stepperCurrentPosition[i] > STEPPER_STEPS_PER_REV*2) {
+          m_stepperHomeState[i] = WAITING_FOR_NOT_HOME;
+        }
+        m_stepperHomeActiveLastTime[i] = homeActive;
+        if (m_stepperCurrentPosition[i] != m_stepperTargetStep[i]) {
           m_rotateStepper[i] = true;
         } else {
           m_rotateStepper[i] = false;
         }
       }
   //    Serial.println(m_stepperCurrentPosition[i]/FLAP_STEPS_PER_FLAP);
-  //    Serial.println(m_stepperTargetFlap[i]);
+  //    Serial.println(m_stepperTargetStep[i]);
   //    Serial.println(m_stepperCurrentPosition[i]);
       
       // Calculate new coil state
@@ -148,7 +176,7 @@ namespace EBaptist_RegSplitFlap
           }
           m_stepperCoilState[i] = m_stepperPatterns[m_stepperStepIndex[i]];
           m_stepperCurrentPosition[i]++;
-          if (m_stepperCurrentPosition[i] >= STEPPER_STEPS_PER_REV) m_stepperCurrentPosition[i] = 0;
+          //if (m_stepperCurrentPosition[i] >= STEPPER_STEPS_PER_REV) m_stepperCurrentPosition[i] -= STEPPER_STEPS_PER_REV;
         } 
         if (m_accelLimit[i] > 0) {
           m_accelCount[i] -= STEPPER_ACCEL_COUNT_REDUCTION;
@@ -159,14 +187,10 @@ namespace EBaptist_RegSplitFlap
         m_accelCount[i] = STEPPER_ACCEL_PERIOD_START;
         m_accelLimit[i] = STEPPER_ACCEL_PERIOD_START;
       }
-    }
+//    }
+
   
-    // https://www.instructables.com/id/Fast-digitalRead-digitalWrite-for-Arduino/
-    PORTB = 0b000111; // load mode
-    SPI.transfer(0); // clock to enact parallel load
-    PORTB = 0b000101; // shift right mode
-    
-    for (int i = 0; i < SREG_NUM_REGS; i++) {  
+//    for (int i = 0; i < SREG_NUM_REGS; i++) {  
       // Output to coil drivers and read home sensor
       m_stepperReadData[i] = SPI.transfer(m_stepperCoilState[i]);
     }
@@ -175,9 +199,9 @@ namespace EBaptist_RegSplitFlap
     //Serial.println((m_stepperReadData[0] & 0xF0));
   }
 
-  void setTarget(int unit, int target)
+  void setTarget(int charUnit, int targetFlap)
   {
-    m_stepperTargetFlap[unit] = target;
+    m_stepperTargetStep[charUnit] = (int)(FLAP_STEPS_PER_FLAP*targetFlap);
   }
 
 }

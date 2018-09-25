@@ -1,13 +1,13 @@
 // Shift register control of a split-flap display
 // Elliot Baptist 2018/09/11
 
-#ifndef EBAPTIST_REGSPLITFLAP_H
-#define EBAPTIST_REGSPLITFLAP_H
+#ifndef REGSPLITFLAP_H
+#define REGSPLITFLAP_H
 
 // Includes
 #include <SPI.h>
 
-namespace EBaptist_RegSplitFlap
+namespace EWNB_RegSplitFlap
 {
   
   // Constants
@@ -26,22 +26,18 @@ namespace EBaptist_RegSplitFlap
   const byte STEPPER_DISABLE_PATTERN = STEPPER_ACTIVE_LEVEL + 0xFF;
   const bool STEPPER_MICROSTEP = 1;
   const bool STEPPER_ACCELERATE = 1;
-  const int STEPPER_STEPS_PER_REV = 513 * 4 * (1+STEPPER_MICROSTEP);
-  const int STEPPER_STEP_PERIOD_US = 1800 /(1+STEPPER_MICROSTEP);
+  const int STEPPER_STEPS_PER_REV = 2048 * (1+STEPPER_MICROSTEP);
+  const int STEPPER_STEP_PERIOD_US = 1600 /(1+STEPPER_MICROSTEP);
   const int STEPPER_ACCEL_PERIOD_START = 100;
   const int STEPPER_ACCEL_PERIOD_REDUCTION = 2 /(1+STEPPER_MICROSTEP);
   const int STEPPER_ACCEL_COUNT_REDUCTION = 20 /(1+STEPPER_MICROSTEP);
    
   const int FLAP_NUM_FLAPS = 16;
+  const int FLAP_HOME_STEP_OFFSET[SREG_NUM_REGS] = {0 * (1+STEPPER_MICROSTEP)};
+  const int FLAP_HOME_TOLERANCE_STEPS = 10;
 
   
-  
-  typedef enum
-  {
-    WAITING_FOR_NOT_HOME = 0,
-    SEEN_NOT_HOME = 1,
-    HOME_FOUND = 2
-  } homing_state_t;
+ 
   
   // Class declaration
   //class RegSplitFlap {
