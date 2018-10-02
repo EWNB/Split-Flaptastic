@@ -19,13 +19,14 @@ void setup()
 int flap = 0;
 void loop() 
 {
-  delay(6000);
-  EWNB_RegSplitFlap::setTarget(0, 7); //flap);
+  while(!EWNB_RegSplitFlap::reachedTargets()) {;}
+  delay(2000);
+  int targets[] = {7};
+  EWNB_RegSplitFlap::setTargets(targets, sizeof(targets)/sizeof(targets[0]));
   Serial.println("set 7");
-  delay(1000);
+  while(!EWNB_RegSplitFlap::reachedTargets()) {;}
   EWNB_RegSplitFlap::setTarget(0, 0);
   Serial.println("set 0");
 //  flap++;
 //  flap = flap % 16;
-//  Serial.println(EWNB_RegSplitFlap::STEPPER_DISABLE_PATTERN);
 }

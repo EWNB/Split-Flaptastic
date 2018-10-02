@@ -29,7 +29,7 @@ namespace EWNB_RegSplitFlap
 //  unsigned long m_timeNextStep = {0};
   int m_accelCount[SREG_NUM_REGS] = {0};
   int m_accelLimit[SREG_NUM_REGS] = {0};
-  int m_stepperCurrentPosition[SREG_NUM_REGS] = {0};
+  int m_stepperCurrentPosition[SREG_NUM_REGS] = {-1};
   int m_stepperTargetStep[SREG_NUM_REGS] = {0};
 
 
@@ -131,7 +131,7 @@ namespace EWNB_RegSplitFlap
           m_stepperHomeState[i] = SEEN_NOT_HOME;
         } else if (m_stepperHomeState[i] == SEEN_NOT_HOME && homeActive) {
           m_stepperHomeState[i] = HOME_FOUND;
-          m_stepperCurrentPosition[i] = FLAP_HOME_STEP_OFFSET[i];
+          m_stepperCurrentPosition[i] = 0; //FLAP_HOME_STEP_OFFSET[i];
         }
       }
       
@@ -139,7 +139,7 @@ namespace EWNB_RegSplitFlap
         if (homeActive && !m_stepperHomeActiveLastTime[i]) {
           if (m_stepperCurrentPosition[i] >= STEPPER_STEPS_PER_REV-FLAP_HOME_TOLERANCE_STEPS
             && m_stepperCurrentPosition[i] <= STEPPER_STEPS_PER_REV+FLAP_HOME_TOLERANCE_STEPS) {
-              m_stepperCurrentPosition[i] = 0;
+              m_stepperCurrentPosition[i] = 0; //FLAP_HOME_STEP_OFFSET[i];
               Serial.println("home succeded!");
             } else {
               Serial.println("home ignored!");
@@ -155,9 +155,6 @@ namespace EWNB_RegSplitFlap
           m_rotateStepper[i] = false;
         }
       }
-  //    Serial.println(m_stepperCurrentPosition[i]/FLAP_STEPS_PER_FLAP);
-  //    Serial.println(m_stepperTargetStep[i]);
-  //    Serial.println(m_stepperCurrentPosition[i]);
       
       // Calculate new coil state
       if (m_rotateStepper[i]) {
@@ -199,9 +196,41 @@ namespace EWNB_RegSplitFlap
     //Serial.println((m_stepperReadData[0] & 0xF0));
   }
 
-  void setTarget(int charUnit, int targetFlap)
+  void setTarget(int unit, int targetFlap)
   {
-    m_stepperTargetStep[charUnit] = (int)(FLAP_STEPS_PER_FLAP*targetFlap);
+    noInterrupts(); // critical section
+    m_stepperTargetStep[unit] = (FLAP_HOME_STEP_OFFSET[unit] + (int)(FLAP_STEPS_PER_FLAP*targetFlap)) % STEPPER_STEPS_PER_REV;
+    interrupts(); // critical section
+  }
+
+  void setTargets(int targets[], int len, int offset) {
+//    if (len == -1) len = 
+    for (int unit = offset; unit < offset+len; unit++) {
+      setTarget(unit, targets[unit]);
+    }
+  }
+
+  bool reachedTarget(int unit) {
+//    Serial.print(m_stepperCurrentPosition[unit]);
+//    Serial.print(" ");
+//    Serial.print(m_stepperTargetStep[unit]);
+//    Serial.println();
+    bool result;
+    noInterrupts(); // critical section
+    result = m_stepperCurrentPosition[unit] == m_stepperTargetStep[unit] 
+              && m_stepperHomeState[unit] == HOME_FOUND;
+    interrupts();
+    return result;
+  }
+
+  bool reachedTargets() {
+    bool result = true;
+    //noInterrupts(); // critical section?
+    for (int unit = 0; unit < SREG_NUM_REGS; unit++) {
+      result &= reachedTarget(unit);
+    }
+    //interrupts();
+    return result;
   }
 
 }

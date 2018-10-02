@@ -27,13 +27,13 @@ namespace EWNB_RegSplitFlap
   const bool STEPPER_MICROSTEP = 1;
   const bool STEPPER_ACCELERATE = 1;
   const int STEPPER_STEPS_PER_REV = 2048 * (1+STEPPER_MICROSTEP);
-  const int STEPPER_STEP_PERIOD_US = 1600 /(1+STEPPER_MICROSTEP);
+  const int STEPPER_STEP_PERIOD_US = 1800 /(1+STEPPER_MICROSTEP);
   const int STEPPER_ACCEL_PERIOD_START = 100;
   const int STEPPER_ACCEL_PERIOD_REDUCTION = 2 /(1+STEPPER_MICROSTEP);
   const int STEPPER_ACCEL_COUNT_REDUCTION = 20 /(1+STEPPER_MICROSTEP);
    
   const int FLAP_NUM_FLAPS = 16;
-  const int FLAP_HOME_STEP_OFFSET[SREG_NUM_REGS] = {0 * (1+STEPPER_MICROSTEP)};
+  const int FLAP_HOME_STEP_OFFSET[SREG_NUM_REGS] = {1050 * (1+STEPPER_MICROSTEP)};
   const int FLAP_HOME_TOLERANCE_STEPS = 10;
 
   
@@ -47,6 +47,9 @@ namespace EWNB_RegSplitFlap
       void init();
       void doStep();
       void setTarget(int unit, int target);
+      void setTargets(int targets[], int len, int offset=0);
+      bool reachedTarget(int unit);
+      bool reachedTargets();
   
     //private:
 //      void setRotation(int stepper, bool rotate);
