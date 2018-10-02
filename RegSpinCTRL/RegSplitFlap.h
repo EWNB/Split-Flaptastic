@@ -33,7 +33,7 @@ namespace EWNB_RegSplitFlap
   const int STEPPER_ACCEL_COUNT_REDUCTION = 20 /(1+STEPPER_MICROSTEP);
    
   const int FLAP_NUM_FLAPS = 16;
-  const int FLAP_HOME_STEP_OFFSET[SREG_NUM_REGS] = {1050 * (1+STEPPER_MICROSTEP)};
+  const int FLAP_HOME_STEP_OFFSET[SREG_NUM_REGS] = {970 * (1+STEPPER_MICROSTEP)}; //1050
   const int FLAP_HOME_TOLERANCE_STEPS = 10;
 
   
@@ -46,7 +46,7 @@ namespace EWNB_RegSplitFlap
       
       void init();
       void doStep();
-      void setTarget(int unit, int target);
+      void setTarget(int target, int unit);
       void setTargets(int targets[], int len, int offset=0);
       bool reachedTarget(int unit);
       bool reachedTargets();

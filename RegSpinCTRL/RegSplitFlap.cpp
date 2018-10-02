@@ -132,21 +132,23 @@ namespace EWNB_RegSplitFlap
         } else if (m_stepperHomeState[i] == SEEN_NOT_HOME && homeActive) {
           m_stepperHomeState[i] = HOME_FOUND;
           m_stepperCurrentPosition[i] = 0; //FLAP_HOME_STEP_OFFSET[i];
+          Serial.println("home found");
         }
       }
-      
-      if (m_stepperHomeState[i] == HOME_FOUND) {
+      else {
+      //if (m_stepperHomeState[i] == HOME_FOUND) {
         if (homeActive && !m_stepperHomeActiveLastTime[i]) {
           if (m_stepperCurrentPosition[i] >= STEPPER_STEPS_PER_REV-FLAP_HOME_TOLERANCE_STEPS
             && m_stepperCurrentPosition[i] <= STEPPER_STEPS_PER_REV+FLAP_HOME_TOLERANCE_STEPS) {
               m_stepperCurrentPosition[i] = 0; //FLAP_HOME_STEP_OFFSET[i];
-              Serial.println("home succeded!");
+              Serial.println("rehome succeded");
             } else {
-              Serial.println("home ignored!");
+              Serial.println("rehome ignored");
             }
         }
-        if (m_stepperCurrentPosition[i] > STEPPER_STEPS_PER_REV*2) {
+        if (m_stepperCurrentPosition[i] > STEPPER_STEPS_PER_REV+FLAP_HOME_TOLERANCE_STEPS) {
           m_stepperHomeState[i] = WAITING_FOR_NOT_HOME;
+          Serial.println("home lost");
         }
         m_stepperHomeActiveLastTime[i] = homeActive;
         if (m_stepperCurrentPosition[i] != m_stepperTargetStep[i]) {
@@ -196,8 +198,10 @@ namespace EWNB_RegSplitFlap
     //Serial.println((m_stepperReadData[0] & 0xF0));
   }
 
-  void setTarget(int unit, int targetFlap)
+  void setTarget(int targetFlap, int unit)
   {
+    Serial.print("target ");
+    Serial.println(targetFlap);
     noInterrupts(); // critical section
     m_stepperTargetStep[unit] = (FLAP_HOME_STEP_OFFSET[unit] + (int)(FLAP_STEPS_PER_FLAP*targetFlap)) % STEPPER_STEPS_PER_REV;
     interrupts(); // critical section
@@ -206,7 +210,7 @@ namespace EWNB_RegSplitFlap
   void setTargets(int targets[], int len, int offset) {
 //    if (len == -1) len = 
     for (int unit = offset; unit < offset+len; unit++) {
-      setTarget(unit, targets[unit]);
+      setTarget(targets[unit], unit);
     }
   }
 
