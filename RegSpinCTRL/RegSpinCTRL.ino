@@ -15,20 +15,22 @@ void setup()
   EWNB_RegSplitFlap::init();
 }
 
-// loop globals
-int flap = 0;
+// Loop
 void loop() 
 {
   int targets[] = {0};
   EWNB_RegSplitFlap::setTargets(targets, sizeof(targets)/sizeof(targets[0]));
   while(!EWNB_RegSplitFlap::reachedTargets()) {;}
   delay(1000);
+  
+  for (int i=1; i<7; i++){
+    EWNB_RegSplitFlap::setTarget(i, 0);
+    while(!EWNB_RegSplitFlap::reachedTargets()) {;}
+    delay(1000);
+  }
+  
+  EWNB_RegSplitFlap::setTarget(0, 0);
+  while(!EWNB_RegSplitFlap::reachedTargets()) {;}
   EWNB_RegSplitFlap::setTarget(1, 0);
   while(!EWNB_RegSplitFlap::reachedTargets()) {;}
-  delay(1000);
-  EWNB_RegSplitFlap::setTarget(2, 0);
-  while(!EWNB_RegSplitFlap::reachedTargets()) {;}
-  delay(1000);
-//  flap++;
-//  flap = flap % 16;
 }
