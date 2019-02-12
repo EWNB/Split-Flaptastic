@@ -23,14 +23,14 @@ void loop()
   while(!EWNB_RegSplitFlap::reachedTargets()) {;}
   delay(1000);
   
-  for (int i=1; i<7; i++){
+  for (int i=1; i<3; i++){
     EWNB_RegSplitFlap::setTarget(i, 0);
     while(!EWNB_RegSplitFlap::reachedTargets()) {;}
     delay(1000);
   }
   
-  EWNB_RegSplitFlap::setTarget(0, 0);
-  while(!EWNB_RegSplitFlap::reachedTargets()) {;}
-  EWNB_RegSplitFlap::setTarget(1, 0);
-  while(!EWNB_RegSplitFlap::reachedTargets()) {;}
+//  EWNB_RegSplitFlap::setTarget(0, 0);
+//  while(!EWNB_RegSplitFlap::reachedTargets()) {;}
+//  EWNB_RegSplitFlap::setTarget(1, 0);
+//  while(!EWNB_RegSplitFlap::reachedTargets()) {;}
 }
