@@ -23,7 +23,7 @@ void loop()
   while(!EWNB_RegSplitFlap::reachedTargets()) {;}
   delay(1000);
   
-  for (int i=1; i<3; i++){
+  for (int i=0; i<32; i++){
     EWNB_RegSplitFlap::setTarget(i, 0);
     while(!EWNB_RegSplitFlap::reachedTargets()) {;}
     delay(1000);

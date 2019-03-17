@@ -52,13 +52,9 @@ namespace EWNB_RegSplitFlap
     SPI.begin();
     SPI.beginTransaction(SPISettings(8000000, LSBFIRST, SPI_MODE0));
     
-    pinMode(SREG_S0_PIN, OUTPUT);
     pinMode(SREG_S1_PIN, OUTPUT);
-    pinMode(SREG_NOT_OE_PIN, OUTPUT);
     
-    digitalWrite(SREG_S0_PIN, LOW);
     digitalWrite(SREG_S1_PIN, LOW);
-    digitalWrite(SREG_NOT_OE_PIN, HIGH);
   
     for (int i = 0; i < 8; i++) {
       m_stepperPatterns[i] = (1 << ((i+1)/2)%4)| (1 << i/2);
@@ -116,9 +112,11 @@ namespace EWNB_RegSplitFlap
   //  m_timeNextStep += STEPPER_STEP_PERIOD_US;
 
       // https://www.instructables.com/id/Fast-digitalRead-digitalWrite-for-Arduino/
-    PORTB = 0b000111; // load mode
+//    PORTB = 0b000111; // load mode
+    digitalWrite(SREG_S1_PIN, HIGH);
     SPI.transfer(0); // clock to enact parallel load
-    PORTB = 0b000101; // shift right mode
+//    PORTB = 0b000101; // shift right mode
+    digitalWrite(SREG_S1_PIN, LOW);
   
     // Check if should rotate
     for (int i = 0; i < SREG_NUM_REGS; i++) {
@@ -191,10 +189,10 @@ namespace EWNB_RegSplitFlap
   
 //    for (int i = 0; i < SREG_NUM_REGS; i++) {  
       // Output to coil drivers and read home sensor
-      m_stepperReadData[i] = SPI.transfer(m_stepperCoilState[i]);
+      m_stepperReadData[i] = SPI.transfer(m_stepperCoilState[i]<<4);
     }
     
-    PORTB = 0b000000;
+//    PORTB = 0b000000;
     //Serial.println((m_stepperReadData[0] & 0xF0));
   }
 
@@ -238,4 +236,3 @@ namespace EWNB_RegSplitFlap
   }
 
 }
-

@@ -11,18 +11,16 @@ namespace EWNB_RegSplitFlap
 {
   
   // Constants
-  const int SREG_S0_PIN = 8; 
-  const int SREG_S1_PIN = 9;
-  const int SREG_NOT_OE_PIN = 10;
+  const int SREG_S1_PIN = 10;
   
-  const int SREG_HOME_BITMASK = 0b00010000;
+  const int SREG_HOME_BITMASK = 0b1000;
   const bool HOME_ACTIVE_LEVEL = 1;
   
-  const int SREG_NUM_BITS = 8;
+  const int SREG_NUM_BITS = 4;
   const int SREG_NUM_REGS = 1;
   
   const bool STEPPER_REVERSE_DIR = 0;
-  const bool STEPPER_ACTIVE_LEVEL = 0;
+  const bool STEPPER_ACTIVE_LEVEL = 1;
   const byte STEPPER_DISABLE_PATTERN = STEPPER_ACTIVE_LEVEL + 0xFF;
   const bool STEPPER_MICROSTEP = 1;
   const bool STEPPER_ACCELERATE = 1;
@@ -32,8 +30,8 @@ namespace EWNB_RegSplitFlap
   const int STEPPER_ACCEL_PERIOD_REDUCTION = 2 /(1+STEPPER_MICROSTEP);
   const int STEPPER_ACCEL_COUNT_REDUCTION = 20 /(1+STEPPER_MICROSTEP);
    
-  const int FLAP_NUM_FLAPS = 16;
-  const int FLAP_HOME_STEP_OFFSET[SREG_NUM_REGS] = {20 * (1+STEPPER_MICROSTEP)}; //970 1050 1020
+  const int FLAP_NUM_FLAPS = 32;
+  const int FLAP_HOME_STEP_OFFSET[SREG_NUM_REGS] = {10 * (1+STEPPER_MICROSTEP)}; //970 1050 1020
   const int FLAP_HOME_TOLERANCE_STEPS = 10;
 
   

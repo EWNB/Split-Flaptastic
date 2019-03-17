@@ -18,17 +18,13 @@ bool rotateStepper[SREG_NUM_REGS] = {0};
 
 // Functions
 
-void setRotation(char stepper, bool rotate)
-{
+void setRotation(char stepper, bool rotate) {
   rotateStepper[stepper] = rotate;
 }
 
-void doStep()
-{
-  for (int i = 0; i < SREG_NUM_REGS; i++)
-  {
-    if (rotateStepper[i])
-    {
+void doStep() {
+  for (int i = 0; i < SREG_NUM_REGS; i++) {
+    if (rotateStepper[i]) {
       if (STEPPER_DIR) 
         currentStepperState[i] = ((currentStepperState[i]&0x07) << 1) | ((currentStepperState[i]&0x08) >> 3);
       else 
@@ -44,8 +40,7 @@ void doStep()
 //  PORTB = 0b000101;
   digitalWrite(SREG_S1_PIN, LOW);
   byte shift_data[SREG_NUM_REGS];
-  for (int i = 0; i < SREG_NUM_REGS; i++)
-  {
+  for (int i = 0; i < SREG_NUM_REGS; i++) {
       shift_data[i] = SPI.transfer(currentStepperState[i]<<4);
   }
 //  PORTB = 0b000000;
@@ -53,8 +48,7 @@ void doStep()
 }
 
 // Setup
-void setup()
-{
+void setup() {
   Serial.begin(230400);
   SPI.begin();
   SPI.beginTransaction(SPISettings(8000000, LSBFIRST, SPI_MODE0));
@@ -63,15 +57,13 @@ void setup()
 
   digitalWrite(SREG_S1_PIN, LOW);
 
-  for (int i = 0; i < SREG_NUM_REGS; i++)
-  {
+  for (int i = 0; i < SREG_NUM_REGS; i++) {
     currentStepperState[i] = STEPPER_ACTIVE_LEVEL ? 0x01 : 0x0E;
     setRotation(i,1);
   }
 }
 
-void loop()
-{
+void loop() {
   for (int i = 0; i < 513*4; i++){
     doStep();
     delayMicroseconds(2000);
