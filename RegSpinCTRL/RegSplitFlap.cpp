@@ -9,7 +9,7 @@ namespace EWNB_RegSplitFlap
 
   // Constants
   const float FLAP_STEPS_PER_FLAP = STEPPER_STEPS_PER_REV / float(FLAP_NUM_FLAPS);
-  
+
   typedef enum
   {
     WAITING_FOR_NOT_HOME,
@@ -38,30 +38,30 @@ namespace EWNB_RegSplitFlap
   //void startHoming(int stepper);
 
   //RegSplitFlap *instance;
-  
+
   //// Constructors
   //RegSplitFlap::RegSplitFlap()
   //{
   //
   //}
 
-  
+
   // Functions
   void init()
   {
     SPI.begin();
     SPI.beginTransaction(SPISettings(8000000, LSBFIRST, SPI_MODE0));
-    
+
     pinMode(SREG_S1_PIN, OUTPUT);
-    
+
     digitalWrite(SREG_S1_PIN, LOW);
-  
+
     for (int i = 0; i < 8; i++) {
       m_stepperPatterns[i] = (1 << ((i+1)/2)%4)| (1 << i/2);
-      if (STEPPER_ACTIVE_LEVEL == 0) 
+      if (STEPPER_ACTIVE_LEVEL == 0)
         m_stepperPatterns[i] = ~m_stepperPatterns[i];
     }
-  
+
     for (int i = 0; i < SREG_NUM_REGS; i++) {
       //m_stepperCoilState[i] = STEPPER_ACTIVE_LEVEL ? 0x01 : 0x0E;
       m_stepperCoilState[i] = m_stepperPatterns[0];
@@ -70,10 +70,10 @@ namespace EWNB_RegSplitFlap
       m_accelLimit[i] = STEPPER_ACCEL_PERIOD_START;
       m_rotateStepper[i] = 1; //setRotation(i,1);
     }
-  
+
     // Interrupt handler setup
     //RegSplitFlap::instance = this;
-  
+
     // Timer interrupt setup
     noInterrupts(); // global interrupt disable while configuring
     TCCR2A = 0b00000010; // CTC (counter clear) mode
@@ -84,30 +84,30 @@ namespace EWNB_RegSplitFlap
 //    // TIFR2 // interrupt status reg
     interrupts(); // renable interrupts
   }
-  
+
   // Timer interrupt handler
   ISR(TIMER2_COMPA_vect) {
     //Serial.println("!");
     doStep();
   }
-    
+
 //  void setRotation(int stepper, bool rotate)
 //  {
 //    m_rotateStepper[stepper] = rotate;
 //  }
-    
+
 //  void startHoming(int stepper)
 //  {
 //    m_stepperHomeState[stepper] = WAITING_FOR_NOT_HOME;
 //  }
-  
+
   void doStep()
   {
-  ////  if (m_timeNextStep != 0 && m_timeNextStep < micros()) 
+  ////  if (m_timeNextStep != 0 && m_timeNextStep < micros())
   ////    Serial.println("t!");//digitalWrite(ERROR_LED_PIN, HIGH);
   //  Serial.println(m_timeNextStep - micros());
   //  while (m_timeNextStep > micros()) ;
-  //  if (m_timeNextStep == 0) 
+  //  if (m_timeNextStep == 0)
   //    m_timeNextStep = micros();
   //  m_timeNextStep += STEPPER_STEP_PERIOD_US;
 
@@ -117,7 +117,7 @@ namespace EWNB_RegSplitFlap
     SPI.transfer(0); // clock to enact parallel load
 //    PORTB = 0b000101; // shift right mode
     digitalWrite(SREG_S1_PIN, LOW);
-  
+
     // Check if should rotate
     for (int i = 0; i < SREG_NUM_REGS; i++) {
       // Check if should rotate
@@ -155,7 +155,7 @@ namespace EWNB_RegSplitFlap
           m_rotateStepper[i] = false;
         }
       }
-      
+
       // Calculate new coil state
       if (m_rotateStepper[i]) {
         if (m_accelCount[i] <= 0 || !STEPPER_ACCELERATE) {
@@ -174,7 +174,7 @@ namespace EWNB_RegSplitFlap
           m_stepperCoilState[i] = m_stepperPatterns[m_stepperStepIndex[i]];
           m_stepperCurrentPosition[i]++;
           //if (m_stepperCurrentPosition[i] >= STEPPER_STEPS_PER_REV) m_stepperCurrentPosition[i] -= STEPPER_STEPS_PER_REV;
-        } 
+        }
         if (m_accelLimit[i] > 0) {
           m_accelCount[i] -= STEPPER_ACCEL_COUNT_REDUCTION;
           m_accelLimit[i] -= STEPPER_ACCEL_PERIOD_REDUCTION;
@@ -186,12 +186,12 @@ namespace EWNB_RegSplitFlap
       }
 //    }
 
-  
-//    for (int i = 0; i < SREG_NUM_REGS; i++) {  
+
+//    for (int i = 0; i < SREG_NUM_REGS; i++) {
       // Output to coil drivers and read home sensor
       m_stepperReadData[i] = SPI.transfer(m_stepperCoilState[i]<<4);
     }
-    
+
 //    PORTB = 0b000000;
     //Serial.println((m_stepperReadData[0] & 0xF0));
   }
@@ -206,7 +206,7 @@ namespace EWNB_RegSplitFlap
   }
 
   void setTargets(int targets[], int len, int offset) {
-//    if (len == -1) len = 
+//    if (len == -1) len =
     for (int unit = offset; unit < offset+len; unit++) {
       setTarget(targets[unit], unit);
     }
@@ -219,7 +219,7 @@ namespace EWNB_RegSplitFlap
 //    Serial.println();
     bool result;
     noInterrupts(); // critical section
-    result = m_stepperCurrentPosition[unit] == m_stepperTargetStep[unit] 
+    result = m_stepperCurrentPosition[unit] == m_stepperTargetStep[unit]
               && m_stepperHomeState[unit] == HOME_FOUND;
     interrupts();
     return result;

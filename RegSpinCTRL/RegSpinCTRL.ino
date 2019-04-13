@@ -30,7 +30,7 @@ unsigned long last_active;
 String demo_message = "hi! demo mode, enter msg? ABCDEFGHIJKLMNOPQRSTUVWXYZ?!&/, ";
 
 // Setup
-void setup() 
+void setup()
 {
   Serial.begin(230400);
   Serial.println("Booting");
@@ -42,7 +42,7 @@ void setup()
 }
 
 // Loop
-void loop() 
+void loop()
 {
   flap = -1;
   ch = Serial.read();

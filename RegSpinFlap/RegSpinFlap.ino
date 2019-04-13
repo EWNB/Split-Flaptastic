@@ -25,9 +25,9 @@ void setRotation(char stepper, bool rotate) {
 void doStep() {
   for (int i = 0; i < SREG_NUM_REGS; i++) {
     if (rotateStepper[i]) {
-      if (STEPPER_DIR) 
+      if (STEPPER_DIR)
         currentStepperState[i] = ((currentStepperState[i]&0x07) << 1) | ((currentStepperState[i]&0x08) >> 3);
-      else 
+      else
         currentStepperState[i] = ((currentStepperState[i]&0x0E) >> 1) | ((currentStepperState[i]&0x01) << 3);
     }
   }
@@ -52,7 +52,7 @@ void setup() {
   Serial.begin(230400);
   SPI.begin();
   SPI.beginTransaction(SPISettings(8000000, LSBFIRST, SPI_MODE0));
-  
+
   pinMode(SREG_S1_PIN, OUTPUT);
 
   digitalWrite(SREG_S1_PIN, LOW);
