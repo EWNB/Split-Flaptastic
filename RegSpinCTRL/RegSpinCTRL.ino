@@ -6,7 +6,7 @@
 
 // Functions
 int char_to_flap(char ch) {
-  int flap = -1;
+  int flap = 31;
   ch = toupper(ch);
    if ('A' <= ch && ch <= 'Z') {
     flap = ch-'A';
@@ -27,7 +27,7 @@ int char_to_flap(char ch) {
 char ch, flap;
 int demo_index;
 unsigned long last_active;
-String demo_message = "hi! demo mode, enter msg?";
+String demo_message = "hi! demo mode, enter msg? ABCDEFGHIJKLMNOPQRSTUVWXYZ?!&/, ";
 
 // Setup
 void setup() 
