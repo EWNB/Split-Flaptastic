@@ -6,28 +6,30 @@
 
 // Functions
 int char_to_flap(char ch) {
-  int flap = 31;
-  ch = toupper(ch);
-   if ('A' <= ch && ch <= 'Z') {
-    flap = ch-'A';
-   } else {
-    switch (ch) {
-      case '?': flap = 26; break;
-      case '!': flap = 27; break;
-      case '&': flap = 28; break;
-      case '/': flap = 29; break;
-      case ',': flap = 30; break;
-      case ' ': flap = 31; break;
-    }
-  }
-  return flap;
+//  int flap = 31;
+//  ch = toupper(ch);
+//   if ('A' <= ch && ch <= 'Z') {
+//    flap = ch-'A';
+//   } else {
+//    switch (ch) {
+//      case '?': flap = 26; break;
+//      case '!': flap = 27; break;
+//      case '&': flap = 28; break;
+//      case '/': flap = 29; break;
+//      case ',': flap = 30; break;
+//      case ' ': flap = 31; break;
+//    }
+//  }
+//  return flap;
+  return ch-'0';
 }
 
 // Globals
 char ch, flap;
 int demo_index;
 unsigned long last_active;
-String demo_message = "hi! demo mode, enter msg? ABCDEFGHIJKLMNOPQRSTUVWXYZ?!&/, ";
+//String demo_message = "hi! demo mode, enter msg? ABCDEFGHIJKLMNOPQRSTUVWXYZ?!&/, ";
+String demo_message = "01234567";
 
 // Setup
 void setup()
@@ -36,14 +38,16 @@ void setup()
   Serial.println("Booting");
 
   EWNB_RegSplitFlap::init();
+  EWNB_RegSplitFlap::setTarget(0, 0);
   while (!EWNB_RegSplitFlap::reachedTarget(0)) {;}
 
   last_active = millis();
 }
 
 // Loop
+int i = 0;
 void loop()
-{
+{ 
   flap = -1;
   ch = Serial.read();
   if (ch != -1) { // user message
