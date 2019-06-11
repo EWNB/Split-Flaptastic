@@ -60,8 +60,8 @@ void loop()
     demo_index = (demo_index + 1) % demo_message.length();
   }
   if (flap != -1) {
-     EWNB_RegSplitFlap::setTarget(flap, 0);
-     while (!EWNB_RegSplitFlap::reachedTarget(0)) {;}
+     EWNB_RegSplitFlap::setTarget(flap, 1);
+     while (!EWNB_RegSplitFlap::reachedTarget(1)) {;}
      delay(1000);
   }
 }

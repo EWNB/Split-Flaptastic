@@ -8,7 +8,6 @@ namespace EWNB_RegSplitFlap
 {
 
   // Constants
-  const float FLAP_STEPS_PER_FLAP = STEPPER_STEPS_PER_REV / float(FLAP_NUM_FLAPS);
 
   typedef enum
   {
@@ -19,6 +18,9 @@ namespace EWNB_RegSplitFlap
 
 
   // Statics
+  float FLAP_STEPS_PER_FLAP[SREG_NUM_REGS];
+  byte STEPPER_DISABLE_PATTERN[SREG_NUM_REGS];
+
   byte m_stepperPatterns[8] = {0};
   int m_stepperStepIndex[SREG_NUM_REGS] = {0};
   byte m_stepperCoilState[SREG_NUM_REGS] = {0};
@@ -48,6 +50,8 @@ namespace EWNB_RegSplitFlap
     }
 
     for (int i = 0; i < SREG_NUM_REGS; i++) {
+      FLAP_STEPS_PER_FLAP[i] = STEPPER_STEPS_PER_REV / float(FLAP_NUM_FLAPS[i]);
+      STEPPER_DISABLE_PATTERN[i] = STEPPER_ACTIVE_LEVEL[i] + 0xFF;
       m_stepperCoilState[i] = m_stepperPatterns[0];
       m_stepperHomeState[i] = WAITING_FOR_NOT_HOME;
       m_accelCount[i] = STEPPER_ACCEL_PERIOD_START;
@@ -73,7 +77,7 @@ namespace EWNB_RegSplitFlap
   void doStep()
   {
     digitalWrite(SREG_nOE_PIN, HIGH);
-    m_stepperReadData[0] = SPI.transfer(0); // clock to enact parallel load
+    SPI.transfer(0); // clock for a byte to enact load
     digitalWrite(SREG_nOE_PIN, LOW);
 
     // Check if should rotate
@@ -115,7 +119,7 @@ namespace EWNB_RegSplitFlap
           if (m_accelLimit[i] > 0) {
             m_accelCount[i] = m_accelLimit[i];
           }
-          if (!STEPPER_REVERSE_DIR) {
+          if (!STEPPER_REVERSE_DIR[i]) {
             if (m_stepperStepIndex[i] == 7 - !STEPPER_MICROSTEP) m_stepperStepIndex[i] = 0;
             else m_stepperStepIndex[i] += 1 + !STEPPER_MICROSTEP;
             //m_stepperCoilState[i] = ((m_stepperCoilState[i]&0x7F) << 1) | ((m_stepperCoilState[i]&0x08) >> 7);
@@ -133,15 +137,15 @@ namespace EWNB_RegSplitFlap
           m_accelLimit[i] -= STEPPER_ACCEL_PERIOD_REDUCTION;
         }
       } else {
-        m_stepperCoilState[i] = STEPPER_DISABLE_PATTERN;
+        m_stepperCoilState[i] = STEPPER_DISABLE_PATTERN[i];
         m_accelCount[i] = STEPPER_ACCEL_PERIOD_START;
         m_accelLimit[i] = STEPPER_ACCEL_PERIOD_START;
       }
 
       // Output to coil drivers and read home sensor
       byte rddata = SPI.transfer(m_stepperCoilState[i]<<2);
-      if (i < SREG_NUM_REGS-1) {
-      m_stepperReadData[i+1] = rddata;
+      if (i < SREG_NUM_REGS) {
+      m_stepperReadData[i] = rddata;
       }
     }
   }
@@ -151,7 +155,7 @@ namespace EWNB_RegSplitFlap
     Serial.print("target ");
     Serial.println(targetFlap);
     noInterrupts(); // critical section
-    m_stepperTargetStep[unit] = (FLAP_HOME_STEP_OFFSET[unit] + (int)(FLAP_STEPS_PER_FLAP*targetFlap)) % STEPPER_STEPS_PER_REV;
+    m_stepperTargetStep[unit] = (FLAP_HOME_STEP_OFFSET[unit] + (int)(FLAP_STEPS_PER_FLAP[unit]*targetFlap)) % STEPPER_STEPS_PER_REV;
     interrupts(); // critical section
   }
 
