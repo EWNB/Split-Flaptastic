@@ -130,7 +130,7 @@ namespace EWNB_RegSplitFlap
           }
           m_stepperCoilState[i] = m_stepperPatterns[m_stepperStepIndex[i]];
           m_stepperCurrentPosition[i]++;
- 
+
         }
         if (m_accelLimit[i] > 0) {
           m_accelCount[i] -= STEPPER_ACCEL_COUNT_REDUCTION;

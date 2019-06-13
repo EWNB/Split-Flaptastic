@@ -47,7 +47,7 @@ void setup()
 // Loop
 int i = 0;
 void loop()
-{ 
+{
   flap = -1;
   ch = Serial.read();
   if (ch != -1) { // user message
