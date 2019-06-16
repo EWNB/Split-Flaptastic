@@ -13,64 +13,57 @@ namespace EWNB {
   class Flaptastic {
     // Types
     public:
+      // User-provided display configuration data
       struct disp_cfg_t {
         // bool microstep;
         // bool accelerate;
-        int num_units;
-        int update_us; //
-        int n_oe_pin;
+        byte n_oe_pin;
       };
+      // User-provided unit configuration data
       struct unit_cfg_t {
-        bool motor_level;
-        bool home_edge;
-        bool reverse;
-        bool bidirect;
+        byte motor_level:1, home_rising:1, dir:1, bi:1, shift:3;
+        byte thresh;
         int steps;
-        int flaps;
         int offset;
-        int thresh;
-        int tolerance;
+        byte flaps;
+        int tolerance; // TODO: move to display config?
       };
     private:
-      typedef enum {
-        WAITING_FOR_NOT_HOME,
-        SEEN_NOT_HOME,
-        HOME_FOUND
-      } homing_state_t;
-      //
+      // Internal unit configuration data
+      struct unit_int_cfg_t {
+        byte motor_level:1, home_rising:1, dir:1, bi:1, shift:3;
+        byte thresh;
+        int steps;
+        int offset;
+        int home_start; // TODO: change back to tolerance to save memory?
+        int home_end;
+        unsigned long msteps_flap; // milli-steps per flap
+      };
+      // Internal unit state
       struct unit_state_t {
-        homing_state_t home;
-        int msteps_flap; // milli-steps per flap
-        int phase;
-        int position;
+        byte homed:1, prev_home:2, phase:2;
+        int pos;
         int target;
       };
       // Constants
-      const int NUM_BITS = 8;
-      const int MAX_UNITS = 140;
+      static const int MAX_UNITS = 20; // TODO: allow user to change without editing this file
       // Variables
-      int _units_configured;
+      volatile bool _idle;
+      byte _num_units;
+      SPIClass* _spi;
       disp_cfg_t _disp_cfg;
-      unit_cfg_t[MAX_UNITS] _unit_cfg;
-      volatile unit_state_t[MAX_UNITS] _unit_state;
-
-      bool m_rotateStepper[SREG_NUM_REGS] = {0};
-      int m_accelCount[SREG_NUM_REGS] = {0};
-      int m_accelLimit[SREG_NUM_REGS] = {0};
-
-      const int STEPPER_ACCEL_PERIOD_START = 100;
-      const int STEPPER_ACCEL_PERIOD_REDUCTION = 2 /(1+STEPPER_MICROSTEP);
-      const int STEPPER_ACCEL_COUNT_REDUCTION = 20 /(1+STEPPER_MICROSTEP);
+      unit_int_cfg_t _unit_cfg[MAX_UNITS];
+      volatile unit_state_t _unit_state[MAX_UNITS];
 
     public:
-      Flaptastic(disp_cfg_t disp_cfg);
+      Flaptastic();
+      void init(disp_cfg_t disp_cfg, SPIClass* spi);
       bool addUnit(unit_cfg_t unit_cfg);
-      void setFlap(int unit, int flap);
-      // void setTargets(int targets[], int len, int offset=0);
-      void doStep();
+      void set(int unit, int flap);
+      bool step();
       bool done(int unit);
       bool allDone();
-
+      void reset();
   };
 
 };
