@@ -1,4 +1,4 @@
-# SplitFlap
+# Split-Flaptastic
 Various files for making Split-Flap displays
 
 # Files
@@ -6,10 +6,12 @@ Various files for making Split-Flap displays
   * Contains attempts and various circuit designs. [Here are lions](https://en.wikipedia.org/wiki/Here_be_dragons).
 * Code/
   * Here lives embedded code for running split-flap devices or parts thereof.
+  * RegFlap/ 
+    * New Arduino shift register controlled split-flap display program.
   * RegSpinCTRL/
-    * Arduino shift register controlled split flap display program.
+    * Old Arduino shift register controlled split-flap display program.
   * RegSpinFlap/
-    * Arduino shift register controlled motor spinner. Good for testing hardware.
+    * Arduino shift register controlled motor spinner for testing hardware.
 * Flaps/
   * Within lies a script most reptilian that creates flap template PDFs.
 
