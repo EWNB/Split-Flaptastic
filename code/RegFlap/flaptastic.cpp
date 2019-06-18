@@ -49,34 +49,34 @@ namespace EWNB {
     if (!_idle) {
       // Setup
       bool idle = true;
-      byte send_data[MAX_UNITS];
-      byte recv_data[MAX_UNITS];
-      // Calculate motor states
-      for (int i = _num_units-1; i >= 0; i--) {
-        send_data[i] = _unit_cfg[i].motor_level ? 0x00 : 0xFF;
-        if (!_unit_state[i].homed || _unit_state[i].pos != _unit_state[i].target) {
-          // TODO: add bidirectional logic
-          _unit_state[i].phase = (_unit_cfg[i].dir ? _unit_state[i].phase+1 : _unit_state[i].phase-1) & 0b11;
-          send_data[i] ^= 1 << _unit_state[i].phase;
-          _unit_state[i].pos++;
-          idle = false;
-        }
-        send_data[i] <<= _unit_cfg[i].shift;
-      }
+      byte send_data;
+      byte recv_data;
+
       // Drive clock with shift reg outputs disabled to load sensor measurement
       digitalWrite(_disp_cfg.n_oe_pin, HIGH);
       _spi->transfer(0);
       digitalWrite(_disp_cfg.n_oe_pin, LOW);
+      
       // Send motor coil states and receive sensor measurement data over SPI
       for (int i = _num_units-1; i >= 0; i--) {
-        recv_data[i] = _spi->transfer(send_data[i]);
-      }
-      // Home locating logic
-      for (int i = _num_units-1; i >= 0; i--) {
-        // Determine current state and detect any edge
-        bool home_high = recv_data[i] > _unit_cfg[i].thresh; // TODO: add hysteresis?
-        bool found_edge = _unit_state[i].prev_home==0 &&  home_high &&  _unit_cfg[i].home_rising
-                       || _unit_state[i].prev_home==1 && !home_high && !_unit_cfg[i].home_rising;
+        // Calculate motor states
+        send_data = _unit_cfg[i].motor_level ? 0x00 : 0xFF;
+        if (!_unit_state[i].homed || _unit_state[i].pos != _unit_state[i].target) {
+          // TODO: add bidirectional logic
+          _unit_state[i].phase = (_unit_cfg[i].dir ? _unit_state[i].phase+1 : _unit_state[i].phase-1) & 0b11;
+          send_data ^= 1 << _unit_state[i].phase;
+          _unit_state[i].pos++;
+          idle = false;
+        }
+        send_data <<= _unit_cfg[i].shift;
+        
+        // Transfer
+        recv_data = _spi->transfer(send_data);
+        
+        // Determine current home state and detect any edge
+        bool home_high = recv_data > _unit_cfg[i].thresh; // TODO: add hysteresis?
+        bool found_edge = home_high ? _unit_state[i].prev_home==0 && _unit_cfg[i].home_rising
+                                    : _unit_state[i].prev_home==1 && !_unit_cfg[i].home_rising;
         // Update home state
         bool in_range = _unit_cfg[i].home_start <= _unit_state[i].pos && _unit_state[i].pos <= _unit_cfg[i].home_end;
         if (found_edge && (!_unit_state[i].homed || in_range)) { // homed/rehomed
@@ -87,6 +87,7 @@ namespace EWNB {
         // Update previous home sensor value state variable
         _unit_state[i].prev_home = home_high;
       }
+
       // Update idle flag
       _idle = idle;
     }
@@ -105,11 +106,11 @@ namespace EWNB {
   }
 
   bool Flaptastic::done(int unit) {
-    bool running;
+    bool done;
     ATOMIC_BLOCK(ATOMIC_RESTORESTATE) { // critical section in case using interrupt to call step function
-      running = _unit_state[unit].homed && _unit_state[unit].pos == _unit_state[unit].target;
+      done = _unit_state[unit].homed && _unit_state[unit].pos == _unit_state[unit].target;
     }
-    return !running;
+    return done;
   }
 
   bool Flaptastic::allDone() {
