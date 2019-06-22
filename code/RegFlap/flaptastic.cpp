@@ -49,30 +49,37 @@ namespace EWNB {
     if (!_idle) {
       // Setup
       bool idle = true;
-      byte send_data;
-      byte recv_data;
+      uint8_t send_data;
+      uint8_t recv_data;
 
       // Drive clock with shift reg outputs disabled to load sensor measurement
       digitalWrite(_disp_cfg.n_oe_pin, HIGH);
       _spi->transfer(0);
       digitalWrite(_disp_cfg.n_oe_pin, LOW);
-      
+
       // Send motor coil states and receive sensor measurement data over SPI
       for (int i = _num_units-1; i >= 0; i--) {
-        // Calculate motor states
         send_data = _unit_cfg[i].motor_level ? 0x00 : 0xFF;
-        if (!_unit_state[i].homed || _unit_state[i].pos != _unit_state[i].target) {
-          // TODO: add bidirectional logic
-          _unit_state[i].phase = (_unit_cfg[i].dir ? _unit_state[i].phase+1 : _unit_state[i].phase-1) & 0b11;
+        int delta = _unit_state[i].target - _unit_state[i].pos;
+        // Rotate if not reached target position
+        if (!_unit_state[i].homed || delta != 0) {
+          // Determine direction to rotate
+          bool dir = _unit_cfg[i].dir;
+          if (_unit_cfg[i].bi) {
+            if (delta < 0) delta += _unit_cfg[i].steps; // get delta in range 0.._unit_cfg[i].steps
+            dir ^= delta > _unit_cfg[i].steps/2; // set direction as shortest to target
+          }
+          // Calculate new coil state, one step further in desired direction
+          _unit_state[i].phase = (dir ? _unit_state[i].phase+1 : _unit_state[i].phase-1) & 0b11;
           send_data ^= 1 << _unit_state[i].phase;
           _unit_state[i].pos++;
           idle = false;
         }
         send_data <<= _unit_cfg[i].shift;
-        
+
         // Transfer
         recv_data = _spi->transfer(send_data);
-        
+
         // Determine current home state and detect any edge
         bool home_high = recv_data > _unit_cfg[i].thresh; // TODO: add hysteresis?
         bool found_edge = home_high ? _unit_state[i].prev_home==0 && _unit_cfg[i].home_rising
