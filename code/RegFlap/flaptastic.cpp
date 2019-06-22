@@ -61,10 +61,10 @@ namespace EWNB {
       for (int i = _num_units-1; i >= 0; i--) {
         send_data = _unit_cfg[i].motor_level ? 0x00 : 0xFF;
         int delta = _unit_state[i].target - _unit_state[i].pos;
+        bool dir = _unit_cfg[i].dir;
         // Rotate if not reached target position
         if (!_unit_state[i].homed || delta != 0) {
           // Determine direction to rotate
-          bool dir = _unit_cfg[i].dir;
           if (_unit_cfg[i].bi) {
             if (delta < 0) delta += _unit_cfg[i].steps; // get delta in range 0.._unit_cfg[i].steps
             dir ^= delta > _unit_cfg[i].steps/2; // set direction as shortest to target
@@ -84,9 +84,9 @@ namespace EWNB {
         bool home_high = recv_data > _unit_cfg[i].thresh; // TODO: add hysteresis?
         bool found_edge = home_high ? _unit_state[i].prev_home==0 && _unit_cfg[i].home_rising
                                     : _unit_state[i].prev_home==1 && !_unit_cfg[i].home_rising;
-        // Update home state
         bool in_range = _unit_cfg[i].home_start <= _unit_state[i].pos && _unit_state[i].pos <= _unit_cfg[i].home_end;
-        if (found_edge && (!_unit_state[i].homed || in_range)) { // homed/rehomed
+        // Check if reached home. Only home if going forward to prevent bi-directional issues
+        if (found_edge && (!_unit_state[i].homed || in_range) && dir == _unit_cfg[i].dir) { // homed/rehomed
           _unit_state[i].pos = 0;
           _unit_state[i].homed = true;
         }
