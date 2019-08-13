@@ -7,6 +7,7 @@
 
 // Constants
 const int N_OE_PIN = 10;
+const int CE_PIN = 9;
 const int STEPPER_STEP_PERIOD_US = 2200;
 
 // Functions
@@ -35,12 +36,17 @@ unsigned long last_active;
 char ch, flap;
 int demo_index;
 String demo_message = "hi! demo mode, enter msg? ABCDEFGHIJKLMNOPQRSTUVWXYZ?!&/, ";
+bool flash;
 
 // Setup
 void setup() {
   // Serial setup
   Serial.begin(230400);
   Serial.println(F("RegFlap EWNB::Flaptastic test program booting"));
+
+  // Split-flap display 'chip enable' (CLK pass enable) setup
+  pinMode(CE_PIN, OUTPUT);
+  digitalWrite(CE_PIN, LOW); // LOW == disable CLK to split-flap display
 
   // SPI setup
   SPI.begin();
@@ -54,8 +60,6 @@ void setup() {
   unit_cfg.motor_level = 1;
   unit_cfg.home_rising = false;
   unit_cfg.dir = 0;
-  unit_cfg.bi = true;
-  unit_cfg.shift = 2;
   unit_cfg.thresh = 0b11110000;
   unit_cfg.steps = 2048;
   unit_cfg.offset = 980;
@@ -64,7 +68,6 @@ void setup() {
   disp.addUnit(unit_cfg);
 
   unit_cfg.dir = 1;
-  unit_cfg.bi = false;
   unit_cfg.flaps = 16;
   unit_cfg.offset = unit_cfg.steps / (unit_cfg.flaps * 2) - 5;
   unit_cfg.tolerance = 100;
@@ -89,7 +92,7 @@ void setup() {
   while (!disp.allDone()) ;
 
   // Initialise time variables
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < sizeof(last_time)/sizeof(last_time[0]); i++) {
     last_time[i] = millis();
   }
   last_active = millis();
@@ -98,18 +101,23 @@ void setup() {
 // Timer ISR 
 ISR(TIMER2_COMPA_vect) {
   unsigned long start = micros();
+  digitalWrite(CE_PIN, HIGH);
   disp.step();
+  digitalWrite(CE_PIN, LOW);
   Serial.println(micros() - start);
 }
 
 // Loop
 void loop() {
+  // Set things for split-flap display to display
   if (2000 < millis() - last_time[0]) {
-    disp.set(0, random()&0x7);
+    disp.setFlap(0, random()&0x7);
   }
   if (1000 < millis() - last_time[1]) {
     last_time[1] = millis();
-    disp.set(1,(millis()/1000)&0xF);
+    disp.setFlap(1, (millis()/1000)&0xF);
+//    disp.setOut(1, 0, ((millis()/1000)>>4)&1);
+//    disp.setOut(1, 1, ((millis()/1000)>>5)&1);
   }
   if (1000 < millis() - last_time[2]) {
     flap = -1;
@@ -124,13 +132,31 @@ void loop() {
       demo_index = (demo_index + 1) % demo_message.length();
     }
     if (flap != -1) {
-      disp.set(2,flap);
+      disp.setFlap(2,flap);
     }
   }
-  for (int i=0; i<3; i++) {
+  for (int i = 0; i < sizeof(last_time)/sizeof(last_time[0]); i++) {
     if (!disp.done(i) && i != 1) {
       last_time[i] = millis();
     }
+  }
+
+  // Flash LEDs attached to display unit 1
+  if (bool(millis()&(1<<8)) != flash) {
+    flash = !flash;
+    disp.setOut(1, 0, flash);
+    disp.setOut(1, 1, !flash);
+  }
+
+  // Enable timer interrupt only when required, 'cause why not
+  if (disp.allDone() && TIMSK2 & 0b00000010) {
+    noInterrupts(); // global interrupt disable
+    TIMSK2 &= ~0b00000010; // disable interrupt
+    interrupts(); // renable global interrupts
+  } else if (!disp.allDone() && !(TIMSK2 & 0b00000010)) {
+    noInterrupts(); // global interrupt disable
+    TIMSK2 |= 0b00000010; // enable interrupt
+    interrupts(); // renable global interrupts
   }
   
 }

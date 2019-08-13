@@ -25,8 +25,6 @@ namespace EWNB {
       _unit_cfg[_num_units].motor_level = unit_cfg.motor_level;
       _unit_cfg[_num_units].home_rising = unit_cfg.home_rising;
       _unit_cfg[_num_units].dir = unit_cfg.dir;
-      _unit_cfg[_num_units].bi = unit_cfg.bi;
-      _unit_cfg[_num_units].shift = unit_cfg.shift;
       _unit_cfg[_num_units].thresh = unit_cfg.thresh;
       _unit_cfg[_num_units].steps = unit_cfg.steps;
       _unit_cfg[_num_units].offset = unit_cfg.offset;
@@ -61,21 +59,15 @@ namespace EWNB {
       for (int i = _num_units-1; i >= 0; i--) {
         send_data = _unit_cfg[i].motor_level ? 0x00 : 0xFF;
         int delta = _unit_state[i].target - _unit_state[i].pos;
-        bool dir = _unit_cfg[i].dir;
         // Rotate if not reached target position
         if (!_unit_state[i].homed || delta != 0) {
-          // Determine direction to rotate
-          if (_unit_cfg[i].bi) {
-            if (delta < 0) delta += _unit_cfg[i].steps; // get delta in range 0.._unit_cfg[i].steps
-            dir ^= delta > _unit_cfg[i].steps/2; // set direction as shortest to target
-          }
           // Calculate new coil state, one step further in desired direction
-          _unit_state[i].phase = (dir ? _unit_state[i].phase+1 : _unit_state[i].phase-1) & 0b11;
+          _unit_state[i].phase = (_unit_cfg[i].dir ? _unit_state[i].phase+1 : _unit_state[i].phase-1) & 0b11;
           send_data ^= 1 << _unit_state[i].phase;
           _unit_state[i].pos++;
           idle = false;
         }
-        send_data <<= _unit_cfg[i].shift;
+        send_data = _unit_state[i].out0<<1 | send_data<<2 | _unit_state[i].out1<<6;
 
         // Transfer
         recv_data = _spi->transfer(send_data);
@@ -85,8 +77,8 @@ namespace EWNB {
         bool found_edge = home_high ? _unit_state[i].prev_home==0 && _unit_cfg[i].home_rising
                                     : _unit_state[i].prev_home==1 && !_unit_cfg[i].home_rising;
         bool in_range = _unit_cfg[i].home_start <= _unit_state[i].pos && _unit_state[i].pos <= _unit_cfg[i].home_end;
-        // Check if reached home. Only home if going forward to prevent bi-directional issues
-        if (found_edge && (!_unit_state[i].homed || in_range) && dir == _unit_cfg[i].dir) { // homed/rehomed
+        // Check if reached home
+        if (found_edge && (!_unit_state[i].homed || in_range)) { // homed/rehomed
           _unit_state[i].pos = 0;
           _unit_state[i].homed = true;
         }
@@ -101,13 +93,21 @@ namespace EWNB {
     return !_idle;
   }
 
-  void Flaptastic::set(int unit, int flap) {
+  void Flaptastic::setFlap(int unit, int flap) {
     // Calculate
     int target = (flap * _unit_cfg[unit].msteps_flap) / 1000;
     target =  (target + _unit_cfg[unit].offset) % _unit_cfg[unit].steps;
     // Write
     ATOMIC_BLOCK(ATOMIC_RESTORESTATE) { // critical section in case using interrupt to call step function
       _unit_state[unit].target = target;
+      _idle = false;
+    }
+  }
+
+  void Flaptastic::setOut(int unit, int output, bool value) {
+    ATOMIC_BLOCK(ATOMIC_RESTORESTATE) { // critical section in case using interrupt to call step function
+      if (output == 0) _unit_state[unit].out0 = value;
+      else _unit_state[unit].out1 = value;
       _idle = false;
     }
   }

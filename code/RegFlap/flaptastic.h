@@ -22,7 +22,7 @@ namespace EWNB {
       };
       // User-provided unit configuration data
       struct unit_cfg_t {
-        uint8_t motor_level:1, home_rising:1, dir:1, bi:1, shift:3;
+        uint8_t motor_level:1, home_rising:1, dir:1;
         uint8_t thresh;
         uint8_t flaps;
         int steps;
@@ -32,7 +32,7 @@ namespace EWNB {
     private:
       // Internal unit configuration data
       struct unit_int_cfg_t {
-        uint8_t motor_level:1, home_rising:1, dir:1, bi:1, shift:3;
+        uint8_t motor_level:1, home_rising:1, dir:1;
         uint8_t thresh;
         int steps;
         int offset;
@@ -42,7 +42,7 @@ namespace EWNB {
       };
       // Internal unit state
       struct unit_state_t {
-        uint8_t homed:1, prev_home:2, phase:2;
+        uint8_t homed:1, prev_home:2, phase:2, out0:1, out1:1;
         int pos;
         int target;
       };
@@ -60,7 +60,8 @@ namespace EWNB {
       Flaptastic();
       void init(disp_cfg_t disp_cfg, SPIClass* spi);
       bool addUnit(unit_cfg_t unit_cfg);
-      void set(int unit, int flap);
+      void setFlap(int unit, int flap);
+      void setOut(int unit, int output, bool value);
       bool step();
       bool done(int unit);
       bool allDone();
