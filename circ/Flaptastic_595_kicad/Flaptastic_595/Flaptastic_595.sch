@@ -106,38 +106,16 @@ F 3 "~" H 7200 2300 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	6400 3700 5900 3700
-Wire Wire Line
-	5900 3800 6050 3800
-Wire Wire Line
-	5900 3600 6050 3600
-Wire Wire Line
-	5900 3400 6050 3400
-Wire Wire Line
-	5900 3500 6050 3500
-Wire Wire Line
-	5900 3300 6050 3300
-Wire Wire Line
-	5900 3200 6050 3200
-Wire Wire Line
-	5900 3100 6050 3100
-Wire Wire Line
 	5100 3300 5000 3300
 Wire Wire Line
 	5100 3600 5000 3600
 Wire Wire Line
-	5100 3400 5050 3400
-Wire Wire Line
-	5050 3400 5050 2850
+	5100 3400 4400 3400
 Wire Wire Line
 	5000 3600 5000 3300
 Wire Wire Line
 	5000 3300 4750 3300
 Connection ~ 5000 3300
-Wire Wire Line
-	4750 3100 5100 3100
-Wire Wire Line
-	5100 3700 4750 3700
 Wire Wire Line
 	5500 4200 5500 4250
 Wire Wire Line
@@ -195,28 +173,26 @@ F 3 "" H 5050 2750 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 Connection ~ 5050 2850
-Text Label 4750 3700 0    50   ~ 0
+Text Label 5100 3700 2    50   ~ 0
 nOE
 Text Label 4750 3300 0    50   ~ 0
 CLK
-Text Label 4750 3100 0    50   ~ 0
+Text Label 5100 3100 2    50   ~ 0
 SER_IN
-Text Label 6050 3100 2    50   ~ 0
-D0
-Text Label 6050 3200 2    50   ~ 0
-M0
-Text Label 6050 3300 2    50   ~ 0
-M1
-Text Label 6050 3400 2    50   ~ 0
-M2
-Text Label 6050 3500 2    50   ~ 0
-M3
-Text Label 6050 3600 2    50   ~ 0
+Text Label 5900 3100 0    50   ~ 0
 D1
-Text Label 6050 3800 2    50   ~ 0
-D3
+Text Label 5900 3300 0    50   ~ 0
+M3
+Text Label 5900 3400 0    50   ~ 0
+M2
+Text Label 5900 3500 0    50   ~ 0
+M1
+Text Label 5900 3600 0    50   ~ 0
+M0
+Text Label 5900 3200 0    50   ~ 0
+D0
 Text Label 8800 1900 2    50   ~ 0
-D2\SER_OUT
+SER_OUT
 Wire Wire Line
 	8300 1900 8800 1900
 $Comp
@@ -233,7 +209,7 @@ $EndComp
 Wire Wire Line
 	5050 2850 4400 2850
 Wire Wire Line
-	4400 2850 4400 3800
+	4400 2850 4400 3400
 Wire Wire Line
 	4400 4100 4400 4250
 Wire Wire Line
@@ -268,7 +244,7 @@ L Jumper:SolderJumper_2_Open JP1
 U 1 1 5D14C5FB
 P 1550 1600
 F 0 "JP1" H 1550 1805 50  0000 C CNN
-F 1 "CE bypass" H 1550 1714 50  0000 C CNN
+F 1 "CLK bypass" H 1550 1714 50  0000 C CNN
 F 2 "Jumper:SolderJumper-2_P1.3mm_Open_RoundedPad1.0x1.5mm" H 1550 1600 50  0001 C CNN
 F 3 "~" H 1550 1600 50  0001 C CNN
 	1    1550 1600
@@ -285,8 +261,8 @@ Wire Wire Line
 Connection ~ 1300 1250
 Text Label 950  1250 0    50   ~ 0
 CLK_IN
-Text Label 6400 3700 2    50   ~ 0
-D2\SER_OUT
+Text Label 5900 3700 0    50   ~ 0
+SER_OUT
 Wire Wire Line
 	1900 1450 1900 1600
 Wire Wire Line
@@ -298,13 +274,7 @@ Wire Wire Line
 	2350 1000 1900 1000
 Wire Wire Line
 	1900 1000 1900 1050
-Wire Wire Line
-	1900 1000 1900 900 
 Connection ~ 1900 1000
-Wire Wire Line
-	1900 900  1750 900 
-Text Label 1750 900  0    50   ~ 0
-CE
 Wire Wire Line
 	1900 1600 2700 1600
 Text Label 2700 1600 2    50   ~ 0
@@ -356,12 +326,12 @@ $EndComp
 $Comp
 L Connector_Generic:Conn_02x05_Odd_Even J1
 U 1 1 5D1680CC
-P 2450 3500
-F 0 "J1" H 2500 3917 50  0000 C CNN
-F 1 "IN" H 2500 3826 50  0000 C CNN
-F 2 "Connector_IDC:IDC-Header_2x05_P2.54mm_Vertical" H 2450 3500 50  0001 C CNN
-F 3 "~" H 2450 3500 50  0001 C CNN
-	1    2450 3500
+P 1600 3550
+F 0 "J1" H 1650 3967 50  0000 C CNN
+F 1 "IN" H 1650 3876 50  0000 C CNN
+F 2 "Connector_IDC:IDC-Header_2x05_P2.54mm_Vertical" H 1600 3550 50  0001 C CNN
+F 3 "~" H 1600 3550 50  0001 C CNN
+	1    1600 3550
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -412,69 +382,40 @@ Wire Wire Line
 	1050 4950 1050 5050
 Wire Wire Line
 	1450 4950 1450 5050
-Text Label 2250 3300 2    50   ~ 0
+Text Label 1900 3350 0    50   ~ 0
 CLK_IN
-Text Label 2750 3300 0    50   ~ 0
+Text Label 1900 3550 0    50   ~ 0
 SER_IN
-$Comp
-L power:GND #PWR0110
-U 1 1 5D189172
-P 3100 3450
-F 0 "#PWR0110" H 3100 3200 50  0001 C CNN
-F 1 "GND" H 3105 3322 50  0000 R CNN
-F 2 "" H 3100 3450 50  0001 C CNN
-F 3 "" H 3100 3450 50  0001 C CNN
-	1    3100 3450
-	1    0    0    -1  
-$EndComp
-$Comp
-L power:Earth #PWR0111
-U 1 1 5D18C674
-P 2500 3850
-F 0 "#PWR0111" H 2500 3600 50  0001 C CNN
-F 1 "Earth" H 2500 3700 50  0001 C CNN
-F 2 "" H 2500 3850 50  0001 C CNN
-F 3 "~" H 2500 3850 50  0001 C CNN
-	1    2500 3850
-	1    0    0    -1  
-$EndComp
 $Comp
 L power:+5V #PWR0112
 U 1 1 5D18CCF6
-P 3200 3550
-F 0 "#PWR0112" H 3200 3400 50  0001 C CNN
-F 1 "+5V" H 3215 3723 50  0000 C CNN
-F 2 "" H 3200 3550 50  0001 C CNN
-F 3 "" H 3200 3550 50  0001 C CNN
-	1    3200 3550
+P 3750 3550
+F 0 "#PWR0112" H 3750 3400 50  0001 C CNN
+F 1 "+5V" H 3765 3723 50  0000 C CNN
+F 2 "" H 3750 3550 50  0001 C CNN
+F 3 "" H 3750 3550 50  0001 C CNN
+	1    3750 3550
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	2250 3700 2250 3850
+	1400 3750 1400 3950
 Wire Wire Line
-	2250 3850 2500 3850
-Wire Wire Line
-	2500 3850 2750 3850
-Wire Wire Line
-	2750 3850 2750 3700
-Connection ~ 2500 3850
+	1900 3950 1900 3750
 $Comp
 L power:VCC #PWR0113
 U 1 1 5D188CF6
-P 1750 3350
-F 0 "#PWR0113" H 1750 3200 50  0001 C CNN
-F 1 "VCC" H 1767 3523 50  0000 C CNN
-F 2 "" H 1750 3350 50  0001 C CNN
-F 3 "" H 1750 3350 50  0001 C CNN
-	1    1750 3350
+P 900 3400
+F 0 "#PWR0113" H 900 3250 50  0001 C CNN
+F 1 "VCC" H 917 3573 50  0000 C CNN
+F 2 "" H 900 3400 50  0001 C CNN
+F 3 "" H 900 3400 50  0001 C CNN
+	1    900  3400
 	1    0    0    -1  
 $EndComp
-Text Label 2250 3600 2    50   ~ 0
+Text Label 1400 3550 2    50   ~ 0
 nOE
-Text Label 2250 3500 2    50   ~ 0
+Text Label 1400 3350 2    50   ~ 0
 RETURN
-Text Label 2750 3500 0    50   ~ 0
-CE
 $Comp
 L Connector_Generic:Conn_01x04 J3
 U 1 1 5D1B5B33
@@ -535,20 +476,12 @@ Wire Wire Line
 	5550 5900 5550 5850
 Wire Wire Line
 	5550 5900 5650 5900
-NoConn ~ 6150 4500
-NoConn ~ 3600 1100
 Wire Wire Line
-	1750 3400 1750 3350
+	900  3450 900  3400
 Wire Wire Line
-	3100 3400 3100 3450
+	1900 3450 2250 3450
 Wire Wire Line
-	2750 3400 3100 3400
-Wire Wire Line
-	3200 3600 3200 3550
-Wire Wire Line
-	2750 3600 3200 3600
-Wire Wire Line
-	1750 3400 2250 3400
+	900  3450 1400 3450
 Wire Wire Line
 	2800 6100 3000 6100
 Wire Wire Line
@@ -678,5 +611,201 @@ $EndComp
 Text Label 8150 4400 0    50   ~ 0
 RETURN
 Text Label 7850 4400 2    50   ~ 0
-D2\SER_OUT
+SER_OUT
+$Comp
+L Connector_Generic:Conn_01x02 J7
+U 1 1 5D5F7F48
+P 5000 1500
+F 0 "J7" H 5080 1492 50  0000 L CNN
+F 1 "Digital outputs" H 5080 1401 50  0000 L CNN
+F 2 "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical" H 5000 1500 50  0001 C CNN
+F 3 "~" H 5000 1500 50  0001 C CNN
+	1    5000 1500
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	4800 1600 4700 1600
+Text Label 4700 1500 0    50   ~ 0
+D0
+Wire Wire Line
+	4700 1500 4800 1500
+Text Label 4700 1600 0    50   ~ 0
+D1
+Wire Wire Line
+	1900 900  1900 1000
+$Comp
+L power:VCC #PWR0111
+U 1 1 5D61513B
+P 1900 900
+F 0 "#PWR0111" H 1900 750 50  0001 C CNN
+F 1 "VCC" H 1917 1073 50  0000 C CNN
+F 2 "" H 1900 900 50  0001 C CNN
+F 3 "" H 1900 900 50  0001 C CNN
+	1    1900 900 
+	1    0    0    -1  
+$EndComp
+$Comp
+L Jumper:SolderJumper_2_Open JP3
+U 1 1 5D619E95
+P 3350 3650
+F 0 "JP3" H 3350 3855 50  0000 C CNN
+F 1 "Stepper +V feed" H 3350 3764 50  0000 C CNN
+F 2 "Jumper:SolderJumper-2_P1.3mm_Open_RoundedPad1.0x1.5mm" H 3350 3650 50  0001 C CNN
+F 3 "~" H 3350 3650 50  0001 C CNN
+	1    3350 3650
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	2250 3450 2250 3500
+$Comp
+L power:GND #PWR0110
+U 1 1 5D189172
+P 2250 3500
+F 0 "#PWR0110" H 2250 3250 50  0001 C CNN
+F 1 "GND" H 2255 3372 50  0000 R CNN
+F 2 "" H 2250 3500 50  0001 C CNN
+F 3 "" H 2250 3500 50  0001 C CNN
+	1    2250 3500
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3500 3650 3750 3650
+Wire Wire Line
+	3750 3650 3750 3550
+NoConn ~ 5900 3800
+$Comp
+L Jumper:SolderJumper_2_Open JP4
+U 1 1 5D63A03D
+P 3350 3950
+F 0 "JP4" H 3350 4155 50  0000 C CNN
+F 1 "Stepper GND feed" H 3350 4064 50  0000 C CNN
+F 2 "Jumper:SolderJumper-2_P1.3mm_Open_RoundedPad1.0x1.5mm" H 3350 3950 50  0001 C CNN
+F 3 "~" H 3350 3950 50  0001 C CNN
+	1    3350 3950
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:Earth #PWR0120
+U 1 1 5D640F98
+P 3750 4050
+F 0 "#PWR0120" H 3750 3800 50  0001 C CNN
+F 1 "Earth" H 3750 3900 50  0001 C CNN
+F 2 "" H 3750 4050 50  0001 C CNN
+F 3 "~" H 3750 4050 50  0001 C CNN
+	1    3750 4050
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	1400 3950 1900 3950
+Wire Wire Line
+	3500 3950 3750 3950
+Wire Wire Line
+	3750 3950 3750 4050
+Connection ~ 4400 3400
+Wire Wire Line
+	4400 3400 4400 3800
+Wire Wire Line
+	1400 3650 1300 3650
+Wire Wire Line
+	1300 3650 1300 4050
+Wire Wire Line
+	1300 4050 2000 4050
+Wire Wire Line
+	2000 4050 2000 3650
+Wire Wire Line
+	1900 3650 2000 3650
+Connection ~ 2000 3650
+Connection ~ 1900 3950
+Text Label 2400 3650 0    50   ~ 0
+STEPPER_V_IN
+Wire Wire Line
+	2000 3650 3200 3650
+Wire Wire Line
+	1900 3950 3200 3950
+Text Label 2350 3950 0    50   ~ 0
+STEPPER_GND_IN
+$Comp
+L power:+5V #PWR?
+U 1 1 5D705571
+P 8900 3600
+F 0 "#PWR?" H 8900 3450 50  0001 C CNN
+F 1 "+5V" H 8915 3773 50  0000 C CNN
+F 2 "" H 8900 3600 50  0001 C CNN
+F 3 "" H 8900 3600 50  0001 C CNN
+	1    8900 3600
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:Earth #PWR?
+U 1 1 5D705B69
+P 8000 3900
+F 0 "#PWR?" H 8000 3650 50  0001 C CNN
+F 1 "Earth" H 8000 3750 50  0001 C CNN
+F 2 "" H 8000 3900 50  0001 C CNN
+F 3 "~" H 8000 3900 50  0001 C CNN
+	1    8000 3900
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR?
+U 1 1 5D705F46
+P 8700 3450
+F 0 "#PWR?" H 8700 3200 50  0001 C CNN
+F 1 "GND" H 8705 3322 50  0000 R CNN
+F 2 "" H 8700 3450 50  0001 C CNN
+F 3 "" H 8700 3450 50  0001 C CNN
+	1    8700 3450
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:VCC #PWR?
+U 1 1 5D70642A
+P 7250 3400
+F 0 "#PWR?" H 7250 3250 50  0001 C CNN
+F 1 "VCC" H 7267 3573 50  0000 C CNN
+F 2 "" H 7250 3400 50  0001 C CNN
+F 3 "" H 7250 3400 50  0001 C CNN
+	1    7250 3400
+	1    0    0    -1  
+$EndComp
+Text Label 7750 3350 2    50   ~ 0
+RETURN
+Text Label 7750 3550 2    50   ~ 0
+nOE
+Text Label 8250 3350 0    50   ~ 0
+CLK
+Text Label 8250 3550 0    50   ~ 0
+SER_OUT
+Wire Wire Line
+	7750 3450 7250 3450
+Wire Wire Line
+	7250 3450 7250 3400
+Wire Wire Line
+	7750 3750 7750 3850
+Wire Wire Line
+	7750 3850 8000 3850
+Wire Wire Line
+	8250 3850 8250 3750
+Wire Wire Line
+	8000 3900 8000 3850
+Connection ~ 8000 3850
+Wire Wire Line
+	8000 3850 8250 3850
+Wire Wire Line
+	8900 3600 8900 3650
+Wire Wire Line
+	8900 3650 8300 3650
+Wire Wire Line
+	7750 3650 7700 3650
+Wire Wire Line
+	7700 3650 7700 4050
+Wire Wire Line
+	7700 4050 8300 4050
+Wire Wire Line
+	8300 4050 8300 3650
+Connection ~ 8300 3650
+Wire Wire Line
+	8300 3650 8250 3650
+Wire Wire Line
+	8700 3450 8250 3450
 $EndSCHEMATC
