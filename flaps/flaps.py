@@ -92,51 +92,51 @@ flaps_per_page = num_x * num_y
 
 # TODO make list with a dict for each flap, including inkscape id or character (and font), and centering information (offset or center)
 
-# Get list of objects in Inkscape file
-input_inkscape_file = os.path.join('Flaps','32_char.svg')
-objects = subprocess.check_output('inkscape -z -S {}'.format(input_inkscape_file), shell=True).decode('utf-8')
-print(objects)
-# print(type(objects))
-assert type(objects) == str
-
-# Remove undesired objects and keep only the object id
-object_ids = [l.split(',')[0] for l in objects.splitlines() if l.startswith('path')]
-print(object_ids)
-
-# Create temporary folder for holding inscape exports
-# tmpdir = tempfile.TemporaryDirectory()
-
-# Export inkscape objects to temporary folder
-# TODO use -shell option to speed up https://stackoverflow.com/questions/11457931/running-an-interactive-command-from-within-python#13458449
+### Get list of objects in Inkscape file
+##input_inkscape_file = os.path.join('Flaps','32_char.svg')
+##objects = subprocess.check_output('inkscape -z -S {}'.format(input_inkscape_file), shell=True).decode('utf-8')
+##print(objects)
+### print(type(objects))
+##assert type(objects) == str
+##
+### Remove undesired objects and keep only the object id
+##object_ids = [l.split(',')[0] for l in objects.splitlines() if l.startswith('path')]
+##print(object_ids)
+##
+### Create temporary folder for holding inscape exports
+### tmpdir = tempfile.TemporaryDirectory()
+##
+### Export inkscape objects to temporary folder
+### TODO use -shell option to speed up https://stackoverflow.com/questions/11457931/running-an-interactive-command-from-within-python#13458449
 char_surfaces = []
-# normal_dpi = 96
-export_dpi = 200
-# char_scale = mm_to_pt(1)*export_dpi/normal_dpi
-pt_per_in = 72
-pt_per_px = pt_per_in/export_dpi
-# max_width = 0
-# max_height = 0
-# for val in object_ids:
-#   filename = os.path.join('Flaps', 'tmp', val+'.png')
-#   # os.system('inkscape -z -j -i {} -d {} -e {} {}'.format(val, export_dpi, filename, input_inkscape_file)) #tmpdir.name
-#   img_surface = cairo.ImageSurface.create_from_png(filename)
-#   # max_width = max(max_width, new_char_surface.get_width())
-#   # max_height = max(max_height, new_char_surface.get_height())
-#   pdf_surface = cairo.PDFSurface(None, mm_to_pt(flap_width), mm_to_pt(flap_hheight*2))
-#   ctx = cairo.Context(pdf_surface)
-  # char_horz_margin = mm_to_pt(flap_width) - img_surface.get_width()*pt_per_px
-  # char_vert_margin = mm_to_pt(flap_hheight*2) - img_surface.get_height()*pt_per_px
-  # ctx.translate(char_horz_margin/2, char_vert_margin/2)
-  # ctx.scale(pt_per_px, pt_per_px)
-  # ctx.set_source_surface(img_surface)
-  # ctx.paint()
-  # char_surfaces.append(pdf_surface)
+### normal_dpi = 96
+##export_dpi = 200
+### char_scale = mm_to_pt(1)*export_dpi/normal_dpi
+##pt_per_in = 72
+##pt_per_px = pt_per_in/export_dpi
+### max_width = 0
+### max_height = 0
+### for val in object_ids:
+###   filename = os.path.join('Flaps', 'tmp', val+'.png')
+###   # os.system('inkscape -z -j -i {} -d {} -e {} {}'.format(val, export_dpi, filename, input_inkscape_file)) #tmpdir.name
+###   img_surface = cairo.ImageSurface.create_from_png(filename)
+###   # max_width = max(max_width, new_char_surface.get_width())
+###   # max_height = max(max_height, new_char_surface.get_height())
+###   pdf_surface = cairo.PDFSurface(None, mm_to_pt(flap_width), mm_to_pt(flap_hheight*2))
+###   ctx = cairo.Context(pdf_surface)
+##  # char_horz_margin = mm_to_pt(flap_width) - img_surface.get_width()*pt_per_px
+##  # char_vert_margin = mm_to_pt(flap_hheight*2) - img_surface.get_height()*pt_per_px
+##  # ctx.translate(char_horz_margin/2, char_vert_margin/2)
+##  # ctx.scale(pt_per_px, pt_per_px)
+##  # ctx.set_source_surface(img_surface)
+##  # ctx.paint()
+##  # char_surfaces.append(pdf_surface)
 
 # Text characters
 font_size_correction = {None:1.32, 'Boogaloo':1.40}
 font = 'Boogaloo'
 font_height = int(flap_hheight*1.5)
-for ch in list('ABCDEFGHIJKLMNOPQRSTUVWXYZ?!&/,'):
+for ch in list('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ?!.'):
   # new_char_surface = cairo.PSSurface(None, int(mm_to_pt(flap_width)), int(mm_to_pt(flap_hheight*2)))
   new_char_surface = cairo.RecordingSurface(cairo.Content.COLOR_ALPHA, cairo.Rectangle(0,0,int(mm_to_pt(flap_width)), int(mm_to_pt(flap_hheight*2))))
   ctx = cairo.Context(new_char_surface)
@@ -186,7 +186,7 @@ if include_space:
 hchar_bots.append(hchar_bots.pop(0))
 
 # Create output surface
-with cairo.PDFSurface(os.path.join('Flaps','pyflap.pdf'), mm_to_pt(page_width), mm_to_pt(page_height)) as surface:
+with cairo.PDFSurface('pyflap.pdf', mm_to_pt(page_width), mm_to_pt(page_height)) as surface:
   ctx = cairo.Context(surface)
 
   # Work in mm
