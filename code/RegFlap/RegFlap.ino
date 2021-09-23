@@ -8,34 +8,25 @@
 // Constants
 const int N_OE_PIN = 10;
 const int CE_PIN = 9;
-const int STEPPER_STEP_PERIOD_US = 2200;
+const int STEPPER_STEP_PERIOD_US = 2400;
 
 // Functions
 int char_to_flap(char ch) {
-  int flap = 31;
-  ch = toupper(ch);
-   if ('A' <= ch && ch <= 'Z') {
-    flap = ch-'A';
-   } else {
-    switch (ch) {
-      case '?': flap = 26; break;
-      case '!': flap = 27; break;
-      case '&': flap = 28; break;
-      case '/': flap = 29; break;
-      case ',': flap = 30; break;
-      case ' ': flap = 31; break;
-    }
+  if ('0' <= ch && ch <= '9') {
+    return ch - '0';
   }
-  return flap;
+  ch = toupper(ch);
+  if ('A' <= ch && ch <= 'F') {
+    return ch - 'A' + 0xA;
+  }
+  return -1;
 }
 
 // Globals
 EWNB::Flaptastic disp;
-unsigned long last_time[3];
+unsigned long last_time;
 unsigned long last_active;
 char ch, flap;
-int demo_index;
-String demo_message = "hi! demo mode, enter msg? ABCDEFGHIJKLMNOPQRSTUVWXYZ?!&/, ";
 bool flash;
 
 // Setup
@@ -59,24 +50,12 @@ void setup() {
   EWNB::Flaptastic::unit_cfg_t unit_cfg;
   unit_cfg.motor_level = 1;
   unit_cfg.home_rising = false;
-  unit_cfg.dir = 0;
   unit_cfg.thresh = 0b11110000;
   unit_cfg.steps = 2048;
-  unit_cfg.offset = 980;
-  unit_cfg.flaps = 8;
-  unit_cfg.tolerance = 200;
-  disp.addUnit(unit_cfg);
-
   unit_cfg.dir = 1;
   unit_cfg.flaps = 16;
   unit_cfg.offset = unit_cfg.steps / (unit_cfg.flaps * 2) - 5;
   unit_cfg.tolerance = 100;
-  disp.addUnit(unit_cfg);
-
-  unit_cfg.home_rising = true;
-  unit_cfg.dir = 0;
-  unit_cfg.offset = 0;
-  unit_cfg.flaps = 32;
   disp.addUnit(unit_cfg);
 
   // Timer interrupt setup
@@ -92,60 +71,44 @@ void setup() {
   while (!disp.allDone()) ;
 
   // Initialise time variables
-  for (int i = 0; i < sizeof(last_time)/sizeof(last_time[0]); i++) {
-    last_time[i] = millis();
-  }
+  last_time = millis();
   last_active = millis();
 }
 
 // Timer ISR 
 ISR(TIMER2_COMPA_vect) {
-  unsigned long start = micros();
+//  unsigned long start = micros();
   digitalWrite(CE_PIN, HIGH);
   disp.step();
   digitalWrite(CE_PIN, LOW);
-  Serial.println(micros() - start);
+//  Serial.println(micros() - start);
 }
 
 // Loop
 void loop() {
   // Set things for split-flap display to display
-  if (2000 < millis() - last_time[0]) {
-    disp.setFlap(0, random()&0x7);
-  }
-  if (1000 < millis() - last_time[1]) {
-    last_time[1] = millis();
-    disp.setFlap(1, (millis()/1000)&0xF);
-//    disp.setOut(1, 0, ((millis()/1000)>>4)&1);
-//    disp.setOut(1, 1, ((millis()/1000)>>5)&1);
-  }
-  if (1000 < millis() - last_time[2]) {
+  if (1000 < millis() - last_time) {
     flap = -1;
     ch = Serial.read();
-    if (ch != -1) { // user message
+    if (ch != -1) {
+      // user message
       flap = char_to_flap(ch);
       last_active = millis();
-      demo_index = 0;
-    } else if (last_active+10000 < millis()) { // demo mode
-      ch = demo_message.charAt(demo_index);
-      flap = char_to_flap(ch);
-      demo_index = (demo_index + 1) % demo_message.length();
+    } else if (last_active + 10000 < millis()) {
+      // counting mode
+      flap = (millis() / 1000) % 0x10;
     }
+    last_time = millis();
     if (flap != -1) {
-      disp.setFlap(2,flap);
-    }
-  }
-  for (int i = 0; i < sizeof(last_time)/sizeof(last_time[0]); i++) {
-    if (!disp.done(i) && i != 1) {
-      last_time[i] = millis();
+      disp.setFlap(0, flap);
     }
   }
 
-  // Flash LEDs attached to display unit 1
+  // Flash LEDs attached to display unit 0
   if (bool(millis()&(1<<8)) != flash) {
     flash = !flash;
-    disp.setOut(1, 0, flash);
-    disp.setOut(1, 1, !flash);
+    disp.setOut(0, 0, flash);
+    disp.setOut(0, 1, !flash);
   }
 
   // Enable timer interrupt only when required, 'cause why not
