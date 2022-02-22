@@ -1,13 +1,97 @@
 # Elliot Baptist 28 Feb 2019
 
 import argparse
+from collections import namedtuple
+from enum import Enum
 import os
-from typing import List, Tuple
+from pickletools import float8
+from typing import Any, Dict, List, NamedTuple, Tuple, Union
 import cairo
-import math
+from math import floor
 import tempfile
 import subprocess
 
+
+# --- Types/Classes ---
+
+class TextFlap(NamedTuple):
+    '''Represents a text character to be drawn and turned into a flap'''
+    char: str
+    font: str
+    scale: float
+    offset: float = 0.0
+
+    def surface(self,
+                flap_w: float,
+                flap_halfh: float) -> cairo.RecordingSurface:
+        rect = cairo.Rectangle(0,
+                               0,
+                               int(mm_to_pt(flap_w)),
+                               int(mm_to_pt(flap_halfh * 2)))
+        new_char_sfc = cairo.RecordingSurface(cairo.Content.COLOR_ALPHA, rect)
+        ctx = cairo.Context(new_char_sfc)
+        ctx.scale(mm_to_pt(1), mm_to_pt(1))
+        ctx.select_font_face(self.font)
+        font_h = int(flap_halfh * 1.5)
+        ctx.set_font_size(int(font_h * self.scale))
+        ctx.move_to(0, int(flap_halfh + font_h / 2))
+        ctx.show_text(self.char)
+        x, y, width, height = new_char_sfc.ink_extents()
+        ctx.save()
+        ctx.set_operator(cairo.Operator.CLEAR)
+        ctx.paint()
+        ctx.restore()
+        ctx.move_to(int((flap_w - pt_to_mm(width)) / 2 - pt_to_mm(x)),
+                    int(flap_halfh + font_h / 2))
+        ctx.show_text(self.char)
+        return new_char_sfc
+
+
+class ImageScaleType(Enum):
+    MARGIN = 0
+    SCALE = 1
+
+
+class ImageScale(NamedTuple):
+    type: ImageScaleType
+    value: float
+
+
+class ImageFlap(NamedTuple):
+    '''Represents a pre-rendered image to be turned into a flap'''
+    path: os.PathLike  # must be a PNG
+    scale: ImageScale
+    offset: float = 0.0
+
+    def surface(self,
+                flap_w: float,
+                flap_halfh: float) -> cairo.PDFSurface:
+        i_sfc = cairo.ImageSurface.create_from_png(self.path)
+        pdf_sfc = cairo.PDFSurface(None,
+                                   mm_to_pt(flap_w),
+                                   mm_to_pt(flap_halfh * 2))
+        ctx = cairo.Context(pdf_sfc)
+        if self.scale.type is ImageScaleType.MARGIN:
+            h_scale = (mm_to_pt(flap_w - self.scale.value)
+                       / i_sfc.get_width())
+            v_scale = (mm_to_pt(flap_halfh * 2 - self.scale.value)
+                       / i_sfc.get_height())
+            _scale = min(h_scale, v_scale)
+        elif self.scale.type is ImageScaleType.SCALE:
+            _scale = self.scale.value
+        else:
+            raise NotImplementedError('Unexpected ImageScaleType',
+                                      self.scale.type)
+        h_margin = mm_to_pt(flap_w) - i_sfc.get_width() * _scale
+        v_margin = mm_to_pt(flap_halfh * 2) - i_sfc.get_height() * _scale
+        ctx.translate(h_margin / 2, v_margin / 2)
+        ctx.scale(_scale, _scale)
+        ctx.set_source_surface(i_sfc)
+        ctx.paint()
+        return pdf_sfc
+
+
+Flap = Union[TextFlap, ImageFlap]
 
 # --- Constants ---
 
@@ -40,9 +124,9 @@ def cross(ctx: cairo.Context,
         ctx.rel_line_to(0, -span / 2)
     if 'left' in tblr:
         ctx.rel_move_to(-span / 2, 0)
-        ctx.rel_line_to( span / 2, 0)
+        ctx.rel_line_to(span / 2, 0)
     if 'right' in tblr:
-        ctx.rel_move_to( span / 2, 0)
+        ctx.rel_move_to(span / 2, 0)
         ctx.rel_line_to(-span / 2, 0)
 
 
@@ -58,7 +142,7 @@ def flap_cut_marks(ctx: cairo.Context,
                    half_h: float,
                    mark_len: float) -> None:
     cross(ctx, mark_len, ['down', 'right'])
-    ctx.rel_move_to( width, 0)
+    ctx.rel_move_to(width, 0)
     cross(ctx, mark_len, ['down', 'left'])
     ctx.rel_move_to(0,  2 * half_h)
     cross(ctx, mark_len, ['up', 'left'])
@@ -71,7 +155,8 @@ def flap_cut_marks(ctx: cairo.Context,
 
 def flaps(filename: str,
           page_size: Tuple[float, float],
-          flap_size: Tuple[float, float]) -> None:
+          flap_size: Tuple[float, float],
+          flap_list: List[Flap]) -> None:
     # -- Config --
     # flap
     flap_w, flap_h = flap_size
@@ -109,83 +194,14 @@ def flaps(filename: str,
     # Calculate grid
     n_x = calc_num_flaps(page_w, margin_w, flap_w)
     n_y = calc_num_flaps(page_h, margin_h, flap_halfh * 2)
-    x_start = ((page_w - margin_w * 2) %  flap_w         ) / 2 + margin_w
+    x_start = ((page_w - margin_w * 2) % flap_w) / 2 + margin_w
     y_start = ((page_h - margin_h * 2) % (flap_halfh * 2)) / 2 + margin_h
     x_end = x_start + (n_x - 1) * flap_w
     y_end = y_start + (n_y - 1) * flap_halfh * 2
     n_flaps_per_page = n_x * n_y
 
-    # -- Graphics 'characters' --
-
-    # TODO make list with a dict for each flap, including inkscape id or
-    # character (and font), and centering information (offset or center).
-
-    # Get list of objects in Inkscape file
-    ##input_inkscape_file = os.path.join('Flaps','32_char.svg')
-    ##objects = subprocess.check_output('inkscape -z -S {}'.format(input_inkscape_file), shell=True).decode('utf-8')
-    # print(objects)
-    # print(type(objects))
-    ##assert type(objects) == str
-    ##
-    # Remove undesired objects and keep only the object id
-    ##object_ids = [l.split(',')[0] for l in objects.splitlines() if l.startswith('path')]
-    # print(object_ids)
-    ##
-    # Create temporary folder for holding inscape exports
-    ### tmpdir = tempfile.TemporaryDirectory()
-    ##
-    # Export inkscape objects to temporary folder
-    # TODO use -shell option to speed up https://stackoverflow.com/questions/11457931/running-an-interactive-command-from-within-python#13458449
-    char_sfcs = []
-    ### normal_dpi = 96
-    ##export_dpi = 200
-    ### char_scale = mm_to_pt(1)*export_dpi/normal_dpi
-    ##pt_per_in = 72
-    ##pt_per_px = pt_per_in/export_dpi
-    ### max_width = 0
-    ### max_height = 0
-    # for val in object_ids:
-    ###   filename = os.path.join('Flaps', 'tmp', val+'.png')
-    # os.system('inkscape -z -j -i {} -d {} -e {} {}'.format(val, export_dpi, filename, input_inkscape_file)) #tmpdir.name
-    ###   img_surface = cairo.ImageSurface.create_from_png(filename)
-    # max_width = max(max_width, new_char_sfc.get_width())
-    # max_height = max(max_height, new_char_sfc.get_height())
-    ###   pdf_surface = cairo.PDFSurface(None, mm_to_pt(flap_w), mm_to_pt(flap_halfh*2))
-    ###   ctx = cairo.Context(pdf_surface)
-    # char_horz_margin = mm_to_pt(flap_w) - img_surface.get_width()*pt_per_px
-    # char_vert_margin = mm_to_pt(flap_halfh*2) - img_surface.get_height()*pt_per_px
-    # ctx.translate(char_horz_margin/2, char_vert_margin/2)
-    # ctx.scale(pt_per_px, pt_per_px)
-    # ctx.set_source_surface(img_surface)
-    # ctx.paint()
-    # char_sfcs.append(pdf_surface)
-
-    # -- Text characters --
-    font_scale = {None: 1.32, 'Boogaloo': 1.40}
-    font = 'Boogaloo'
-    font_h = int(flap_halfh * 1.5)
-    for ch in list('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ?!.'):
-        rect = cairo.Rectangle(0,
-                               0,
-                               int(mm_to_pt(flap_w)),
-                               int(mm_to_pt(flap_halfh * 2)))
-        new_char_sfc = cairo.RecordingSurface(cairo.Content.COLOR_ALPHA, rect)
-        ctx = cairo.Context(new_char_sfc)
-        ctx.scale(mm_to_pt(1), mm_to_pt(1))
-        ctx.select_font_face(font)
-        ctx.set_font_size(int(font_h * font_scale[font]))
-        ctx.move_to(0, int(flap_halfh + font_h / 2))
-        ctx.show_text(ch)
-        x, y, width, height = new_char_sfc.ink_extents()
-        # rect = new_char_sfc.get_extents()
-        ctx.save()
-        ctx.set_operator(cairo.Operator.CLEAR)
-        ctx.paint()
-        ctx.restore()
-        ctx.move_to(int((flap_w - pt_to_mm(width)) / 2 -
-                    pt_to_mm(x)), int(flap_halfh + font_h/2))
-        ctx.show_text(ch)
-        char_sfcs.append(new_char_sfc)
+    # -- Standardise characters using cairo surfaces --
+    char_sfcs = [flap.surface(flap_w, flap_halfh) for flap in flap_list]
 
     # -- Prepare characters for drawing --
     # Crop to half characters
@@ -272,8 +288,8 @@ def flaps(filename: str,
             ctx.set_line_width(fold_stroke)
             ctx.set_dash([fold_dash_len, fold_dash_len], 0)
             fold_width = (
-                ( math.floor((flap_w - 2 * fold_inset) / (fold_dash_len * 2))
-                  * fold_dash_len * 2)
+                (floor((flap_w - 2 * fold_inset) / (fold_dash_len * 2))
+                 * fold_dash_len * 2)
                 + fold_dash_len
             )
             ctx.rel_move_to(-fold_width / 2, 0)
@@ -327,5 +343,42 @@ def flaps(filename: str,
 # --- Entrypoint ---
 
 if __name__ == '__main__':
-    flaps('pyflap.pdf', PAGE_SIZE_A4, (50, 75))
 
+    flap_list = [
+        TextFlap('0', 'Boogaloo', 1.40),
+        TextFlap('1', 'Boogaloo', 1.40),
+        TextFlap('2', 'Boogaloo', 1.40),
+        TextFlap('3', 'Boogaloo', 1.40),
+        TextFlap('4', 'Boogaloo', 1.40),
+        TextFlap('5', 'Boogaloo', 1.40),
+        TextFlap('6', 'Boogaloo', 1.40),
+        TextFlap('7', 'Boogaloo', 1.40),
+        TextFlap('8', 'Boogaloo', 1.40),
+        TextFlap('9', 'Boogaloo', 1.40),
+        TextFlap('-', 'Boogaloo', 1.40),
+        TextFlap('|', 'Boogaloo', 1.40),
+        TextFlap('+', 'Boogaloo', 1.40),
+        TextFlap('x', 'Boogaloo', 1.40),
+        TextFlap('?', 'Boogaloo', 1.40)
+    ]
+
+    flaps('pyflap.pdf', PAGE_SIZE_A4, (50, 75), flap_list)
+
+
+# # Get list of objects in Inkscape file
+# input_inkscape_file = os.path.join('Flaps','32_char.svg')
+# objects = subprocess.check_output('inkscape -z -S {}'.format(input_inkscape_file), shell=True).decode('utf-8')
+
+# # Remove undesired objects and keep only the object id
+# object_ids = [l.split(',')[0] for l in objects.splitlines() if l.startswith('path')]
+
+# # Export inkscape objects to temporary folder.
+# # TODO: use `-shell`` option to speed up as per
+# # https://stackoverflow.com/questions/11457931/running-an-interactive-command-from-within-python#13458449
+# export_dpi = 200
+# with tempfile.TemporaryDirectory() as tmpdir:
+#     for val in object_ids:
+#         filename = os.path.join(tmpdir, val + '.png')
+#         cmd = ['inkscape', '-z', '-j', '-i', val,
+#                '-d', export_dpi, '-e', filename, input_inkscape_file]
+#         subprocess.check_call(cmd)
