@@ -1,15 +1,13 @@
+#!/usr/bin/env python3
+'''Generates flap sheets for making a split-flap display'''
 # Elliot Baptist 28 Feb 2019
 
-import argparse
 from collections import namedtuple
 from enum import Enum
 import os
-from pickletools import float8
-from typing import Any, Dict, List, NamedTuple, Tuple, Union
+from typing import List, NamedTuple, Tuple, Union
 import cairo
 from math import floor
-import tempfile
-import subprocess
 
 
 # --- Types/Classes ---
@@ -17,34 +15,39 @@ import subprocess
 class TextFlap(NamedTuple):
     '''Represents a text character to be drawn and turned into a flap'''
     char: str
-    font: str
-    scale: float
+    font: str = ''
+    scale: float = 1.0
     offset: float = 0.0
 
     def surface(self,
                 flap_w: float,
                 flap_halfh: float) -> cairo.RecordingSurface:
+        # Create cairo Surface to write to
         rect = cairo.Rectangle(0,
                                0,
                                int(mm_to_pt(flap_w)),
                                int(mm_to_pt(flap_halfh * 2)))
-        new_char_sfc = cairo.RecordingSurface(cairo.Content.COLOR_ALPHA, rect)
-        ctx = cairo.Context(new_char_sfc)
+        sfc = cairo.RecordingSurface(cairo.Content.COLOR_ALPHA, rect)
+        # Prepare
+        ctx = cairo.Context(sfc)
         ctx.scale(mm_to_pt(1), mm_to_pt(1))
         ctx.select_font_face(self.font)
         font_h = int(flap_halfh * 1.5)
         ctx.set_font_size(int(font_h * self.scale))
+        # Trial run to get the width of the drawn character
         ctx.move_to(0, int(flap_halfh + font_h / 2))
         ctx.show_text(self.char)
-        x, y, width, height = new_char_sfc.ink_extents()
+        x, y, width, height = sfc.ink_extents()
+        # Clear surface
         ctx.save()
         ctx.set_operator(cairo.Operator.CLEAR)
         ctx.paint()
         ctx.restore()
+        # Draw for real
         ctx.move_to(int((flap_w - pt_to_mm(width)) / 2 - pt_to_mm(x)),
                     int(flap_halfh + font_h / 2))
         ctx.show_text(self.char)
-        return new_char_sfc
+        return sfc
 
 
 class ImageScaleType(Enum):
@@ -60,17 +63,22 @@ class ImageScale(NamedTuple):
 class ImageFlap(NamedTuple):
     '''Represents a pre-rendered image to be turned into a flap'''
     path: os.PathLike  # must be a PNG
-    scale: ImageScale
+    scale: ImageScale = ImageScale(ImageScaleType.MARGIN, 0)
     offset: float = 0.0
 
     def surface(self,
                 flap_w: float,
                 flap_halfh: float) -> cairo.PDFSurface:
-        i_sfc = cairo.ImageSurface.create_from_png(self.path)
+        # Check path is valid
+        _path = os.path.realpath(self.path)
+        if not os.path.isfile(_path):
+            raise FileNotFoundError(f'"{self.path}" --> "{_path}"')
+        # Create source and destination cairo Surfaces
+        i_sfc = cairo.ImageSurface.create_from_png(_path)
         pdf_sfc = cairo.PDFSurface(None,
                                    mm_to_pt(flap_w),
                                    mm_to_pt(flap_halfh * 2))
-        ctx = cairo.Context(pdf_sfc)
+        # Determine scale and position
         if self.scale.type is ImageScaleType.MARGIN:
             h_scale = (mm_to_pt(flap_w - self.scale.value)
                        / i_sfc.get_width())
@@ -84,6 +92,8 @@ class ImageFlap(NamedTuple):
                                       self.scale.type)
         h_margin = mm_to_pt(flap_w) - i_sfc.get_width() * _scale
         v_margin = mm_to_pt(flap_halfh * 2) - i_sfc.get_height() * _scale
+        # Draw
+        ctx = cairo.Context(pdf_sfc)
         ctx.translate(h_margin / 2, v_margin / 2)
         ctx.scale(_scale, _scale)
         ctx.set_source_surface(i_sfc)
@@ -221,14 +231,7 @@ def flaps(filename: str,
             else:
                 hchar_bots.append(crop_sfc)
 
-    # Add space
-    include_space = True
-    if include_space:
-        hchar_tops.append(None)
-        hchar_bots.append(None)
-        n_chars += 1
-
-    # Shift character bottoms to make flaps align
+    # Shift character bottoms along by one to make the resulting flaps align
     hchar_bots.append(hchar_bots.pop(0))
 
     # -- Prepare to draw --
@@ -356,10 +359,12 @@ if __name__ == '__main__':
         TextFlap('8', 'Boogaloo', 1.40),
         TextFlap('9', 'Boogaloo', 1.40),
         TextFlap('-', 'Boogaloo', 1.40),
-        TextFlap('|', 'Boogaloo', 1.40),
-        TextFlap('+', 'Boogaloo', 1.40),
-        TextFlap('x', 'Boogaloo', 1.40),
-        TextFlap('?', 'Boogaloo', 1.40)
+        TextFlap(':', 'Boogaloo', 1.40),
+        # ImageFlap('/home/ewnb/Desktop/mrSun.png'),  # image
+        TextFlap('\u2600'),  # unicode sun
+        TextFlap('\u2614'),  # unicode rain on umbrella
+        TextFlap('?', 'Boogaloo', 1.40),
+        TextFlap('')  # blank
     ]
 
     flaps('pyflap.pdf', PAGE_SIZE_A4, (50, 75), flap_list)
