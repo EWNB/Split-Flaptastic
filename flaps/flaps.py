@@ -45,7 +45,7 @@ class TextFlap(NamedTuple):
         ctx.restore()
         # Draw for real
         ctx.move_to(int((flap_w - pt_to_mm(width)) / 2 - pt_to_mm(x)),
-                    int(flap_halfh + font_h / 2))
+                    int(flap_halfh + font_h / 2) + self.offset)
         ctx.show_text(self.char)
         return sfc
 
@@ -360,8 +360,8 @@ if __name__ == '__main__':
         TextFlap('9', 'Boogaloo', 1.40),
         TextFlap('-', 'Boogaloo', 1.40),
         TextFlap(':', 'Boogaloo', 1.40),
-        # ImageFlap('/home/ewnb/Desktop/mrSun.png'),  # image
-        TextFlap('\u2600'),  # unicode sun
+        # ImageFlap('path/to/mrSun.png'),  # image
+        TextFlap('\u2600', offset=-7),  # unicode sun
         TextFlap('\u2614'),  # unicode rain on umbrella
         TextFlap('?', 'Boogaloo', 1.40),
         TextFlap('')  # blank
